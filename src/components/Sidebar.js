@@ -7,6 +7,9 @@ export default function Sidebar() {
   const { logout, boutique } = useAuth();
   const navigate = useNavigate();
 
+  // Nom de la boutique (Peut être dynamique via boutique?.name plus tard)
+  const storeName = "Sandro Paris";
+
   // État pour gérer l'ouverture des dossiers (Accords)
   const [openSub, setOpenSub] = useState("dashboard");
 
@@ -17,7 +20,7 @@ export default function Sidebar() {
       icon: "📊",
       subItems: [
         { path: "/", label: "Vue d'ensemble" },
-        { path: "/statistiques", label: "Statistiques & Rapports" }, // <--- IL ÉTAIT ICI LE MANQUANT
+        { path: "/statistiques", label: "Statistiques & Rapports" },
       ],
     },
     {
@@ -35,9 +38,21 @@ export default function Sidebar() {
       label: "QR CODE & ACCÈS",
       icon: "🏷️",
       subItems: [
-        { path: "/produits", label: "Produits & Stocks" },
+        { path: "/produits", label: "Produits de la boutique" },
         { path: "/categories", label: "Catégories" },
       ],
+    },
+    {
+      id: "vendeurs",
+      label: "GESTION VENDEURS",
+      icon: "👥",
+      subItems: [{ path: "/vendeurs", label: "Liste des vendeurs" }],
+    },
+    {
+      id: "clients",
+      label: "GESTION CLIENTS",
+      icon: "👤",
+      subItems: [{ path: "/clients", label: "Liste des clients" }],
     },
     {
       id: "marketing",
@@ -46,22 +61,10 @@ export default function Sidebar() {
       subItems: [{ path: "/marketing", label: "Coupons de réduction" }],
     },
     {
-      id: "vendeurs",
-      label: "GESTION VENDEURS",
-      icon: "👥",
-      subItems: [{ path: "/vendeurs", label: "Liste du staff" }],
-    },
-    {
-      id: "clients",
-      label: "GESTION CLIENTS",
-      icon: "👤",
-      subItems: [{ path: "/clients", label: "Fichiers Clients" }],
-    },
-    {
       id: "settings",
       label: "PARAMÈTRES",
       icon: "⚙️",
-      subItems: [{ path: "/parametres", label: "Général & Horaires" }],
+      subItems: [{ path: "/parametres", label: "Configuration Boutique" }],
     },
   ];
 
@@ -78,14 +81,15 @@ export default function Sidebar() {
         zIndex: 100,
       }}
     >
-      {/* LOGO */}
-      <div style={{ padding: "30px 24px", textAlign: "center" }}>
+      {/* 1. LOGO */}
+      <div style={{ padding: "30px 24px 10px 24px", textAlign: "center" }}>
         <h1
           style={{
             fontFamily: "var(--font-display)",
             color: "var(--gold)",
             fontSize: "28px",
             letterSpacing: "2px",
+            margin: 0,
           }}
         >
           LIVRR
@@ -102,7 +106,66 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* NAVIGATION */}
+      {/* 2. NOM DE LA BOUTIQUE (AJOUTÉ ICI) */}
+      <div
+        style={{
+          padding: "20px 24px",
+          marginBottom: "15px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "35px",
+            height: "35px",
+            background: "var(--gold)",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--noir)",
+            fontWeight: "800",
+            fontSize: "16px",
+          }}
+        >
+          {storeName.charAt(0)}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: "700",
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {storeName}
+          </span>
+          <span
+            style={{
+              fontSize: "10px",
+              color: "var(--gold)",
+              fontWeight: "600",
+              opacity: 0.8,
+            }}
+          >
+            Boutique Élite
+          </span>
+        </div>
+      </div>
+
+      {/* 3. NAVIGATION */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "0 12px" }}>
         {menuGroups.map((group) => (
           <div key={group.id} style={{ marginBottom: "8px" }}>
@@ -173,7 +236,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* DÉCONNEXION */}
+      {/* 4. DÉCONNEXION */}
       <div
         style={{
           padding: "20px",
