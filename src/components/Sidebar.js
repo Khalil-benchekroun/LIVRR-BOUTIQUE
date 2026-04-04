@@ -1,102 +1,212 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
-
-const NAV = [
-  { path: '/', icon: '▦', label: 'Tableau de bord' },
-  { path: '/commandes', icon: '📦', label: 'Commandes', badge: 3 },
-  { path: '/produits', icon: '🏷', label: 'Produits & stocks' },
-  { path: '/statistiques', icon: '📊', label: 'Statistiques' },
-  { path: '/clients', icon: '👥', label: 'Clients' },
-  { path: '/parametres', icon: '⚙', label: 'Paramètres' },
-];
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function Sidebar() {
-  const { pathname } = useLocation();
-  const { boutique, logout } = useAuth();
+  const { logout, boutique } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    toast.success('À bientôt !');
-    navigate('/login');
-  };
+  // État pour gérer l'ouverture des dossiers (Accords)
+  const [openSub, setOpenSub] = useState("dashboard");
+
+  const menuGroups = [
+    {
+      id: "dashboard",
+      label: "DATA VISUALISATION",
+      icon: "📊",
+      subItems: [
+        { path: "/", label: "Vue d'ensemble" },
+        { path: "/statistiques", label: "Statistiques & Rapports" }, // <--- IL ÉTAIT ICI LE MANQUANT
+      ],
+    },
+    {
+      id: "orders",
+      label: "COMMANDES",
+      icon: "📦",
+      subItems: [
+        { path: "/commandes", label: "Toutes les commandes" },
+        { path: "/commandes-pos", label: "Commande Manuelle" },
+        { path: "/retours", label: "Gestion des retours" },
+      ],
+    },
+    {
+      id: "catalog",
+      label: "QR CODE & ACCÈS",
+      icon: "🏷️",
+      subItems: [
+        { path: "/produits", label: "Produits & Stocks" },
+        { path: "/categories", label: "Catégories" },
+      ],
+    },
+    {
+      id: "marketing",
+      label: "PROMOTION",
+      icon: "🎟️",
+      subItems: [{ path: "/marketing", label: "Coupons de réduction" }],
+    },
+    {
+      id: "vendeurs",
+      label: "GESTION VENDEURS",
+      icon: "👥",
+      subItems: [{ path: "/vendeurs", label: "Liste du staff" }],
+    },
+    {
+      id: "clients",
+      label: "GESTION CLIENTS",
+      icon: "👤",
+      subItems: [{ path: "/clients", label: "Fichiers Clients" }],
+    },
+    {
+      id: "settings",
+      label: "PARAMÈTRES",
+      icon: "⚙️",
+      subItems: [{ path: "/parametres", label: "Général & Horaires" }],
+    },
+  ];
 
   return (
-    <aside style={{
-      width: 'var(--sidebar-width)',
-      background: 'var(--sidebar)',
-      position: 'fixed',
-      top: 0, left: 0, bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      zIndex: 50,
-    }}>
-      {/* Logo */}
-      <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--white)', letterSpacing: '0.15em' }}>LIVRR</div>
-        <div style={{ fontSize: '10px', color: 'var(--gold)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px' }}>Espace Boutique</div>
+    <div
+      style={{
+        width: "240px",
+        height: "100vh",
+        background: "var(--sidebar)",
+        color: "#fff",
+        position: "fixed",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: 100,
+      }}
+    >
+      {/* LOGO */}
+      <div style={{ padding: "30px 24px", textAlign: "center" }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "var(--gold)",
+            fontSize: "28px",
+            letterSpacing: "2px",
+          }}
+        >
+          LIVRR
+        </h1>
+        <div
+          style={{
+            fontSize: "9px",
+            color: "var(--gray-light)",
+            letterSpacing: "1px",
+            marginTop: "4px",
+          }}
+        >
+          ADMIN BOUTIQUE
+        </div>
       </div>
 
-      {/* Boutique info */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(201,169,110,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
-          {boutique?.logo || '🏪'}
-        </div>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--white)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{boutique?.name}</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
-            {boutique?.isVerified ? '✓ Vérifié' : '⏳ En attente'}
+      {/* NAVIGATION */}
+      <nav style={{ flex: 1, overflowY: "auto", padding: "0 12px" }}>
+        {menuGroups.map((group) => (
+          <div key={group.id} style={{ marginBottom: "8px" }}>
+            <div
+              onClick={() => setOpenSub(openSub === group.id ? "" : group.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px",
+                cursor: "pointer",
+                borderRadius: "8px",
+                transition: "0.2s",
+                background:
+                  openSub === group.id
+                    ? "rgba(255,255,255,0.03)"
+                    : "transparent",
+                color:
+                  openSub === group.id
+                    ? "var(--gold)"
+                    : "rgba(255,255,255,0.6)",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>{group.icon}</span>
+              <span style={{ fontSize: "12px", fontWeight: "600" }}>
+                {group.label}
+              </span>
+              <span
+                style={{ marginLeft: "auto", fontSize: "10px", opacity: 0.5 }}
+              >
+                {openSub === group.id ? "▼" : "▶"}
+              </span>
+            </div>
+
+            {openSub === group.id && (
+              <div
+                style={{
+                  marginLeft: "32px",
+                  marginTop: "4px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2px",
+                }}
+              >
+                {group.subItems.map((sub) => (
+                  <NavLink
+                    key={sub.path}
+                    to={sub.path}
+                    className={({ isActive }) =>
+                      isActive ? "sub-active" : "sub-link"
+                    }
+                    style={{
+                      padding: "8px 12px",
+                      fontSize: "13px",
+                      textDecoration: "none",
+                      borderRadius: "6px",
+                      color: "rgba(255,255,255,0.4)",
+                      transition: "0.2s",
+                      display: "block",
+                    }}
+                  >
+                    {sub.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
-        {NAV.map(item => {
-          const active = pathname === item.path;
-          return (
-            <Link key={item.path} to={item.path} style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '10px 12px',
-              borderRadius: 'var(--radius-md)',
-              background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
-              color: active ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
-              fontSize: '14px',
-              fontWeight: active ? '500' : '400',
-              transition: 'var(--transition)',
-              position: 'relative',
-            }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--white)'; }}
-            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; } }}>
-              <span style={{ fontSize: '16px', width: '20px', textAlign: 'center' }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge && (
-                <span style={{ background: 'var(--gold)', color: 'var(--noir)', fontSize: '10px', fontWeight: '600', minWidth: '18px', height: '18px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{item.badge}</span>
-              )}
-            </Link>
-          );
-        })}
+        ))}
       </nav>
 
-      {/* Bottom */}
-      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginBottom: '10px', textAlign: 'center' }}>
-          ⚡ Livraison en moins d'1h
-        </div>
-        <button onClick={handleLogout} style={{
-          width: '100%', padding: '10px', borderRadius: 'var(--radius-md)',
-          background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)',
-          fontSize: '13px', cursor: 'pointer', border: 'none', fontFamily: 'var(--font-body)',
-          transition: 'var(--transition)',
+      {/* DÉCONNEXION */}
+      <div
+        style={{
+          padding: "20px",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--white)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
-          🚪 Se déconnecter
+      >
+        <button
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          style={{
+            width: "100%",
+            color: "var(--error)",
+            fontSize: "12px",
+            fontWeight: "700",
+            cursor: "pointer",
+            background: "none",
+            border: "none",
+          }}
+        >
+          ● DÉCONNEXION
         </button>
       </div>
-    </aside>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .sub-link:hover { color: #fff !important; background: rgba(255,255,255,0.05); }
+        .sub-active { color: var(--gold) !important; background: rgba(201, 169, 110, 0.1) !important; font-weight: 600; border-right: 2px solid var(--gold); }
+      `,
+        }}
+      />
+    </div>
   );
 }

@@ -1,157 +1,414 @@
-import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 
-const ALL_ORDERS = [
-  { ref:'#LV-00248', client:'Sophie Martin', phone:'06 12 34 56 78', items:[{emoji:'👗',name:'Robe Midi Fleurie',size:'S',qty:1,price:490}], total:490, status:'pending', address:'42 Av. Montaigne, 75008 Paris', time:'14:32', date:"Aujourd'hui" },
-  { ref:'#LV-00247', client:'Camille Dupont', phone:'06 23 45 67 89', items:[{emoji:'🥼',name:'Blazer Structuré',size:'M',qty:1,price:295},{emoji:'👜',name:'Ceinture Cuir',size:null,qty:1,price:89}], total:384, status:'preparing', address:'18 Rue du Faubourg, 75008 Paris', time:'14:10', date:"Aujourd'hui" },
-  { ref:'#LV-00246', client:'Marie Laurent', phone:'06 34 56 78 90', items:[{emoji:'🧥',name:'Trench Camel',size:'M',qty:1,price:890}], total:890, status:'transit', address:'7 Place Vendôme, 75001 Paris', time:'13:45', date:"Aujourd'hui" },
-  { ref:'#LV-00245', client:'Julie Petit', phone:'06 45 67 89 01', items:[{emoji:'👗',name:'Robe Midi Fleurie',size:'XS',qty:2,price:490}], total:980, status:'delivered', address:'23 Bd Haussmann, 75009 Paris', time:'12:20', date:"Aujourd'hui" },
-  { ref:'#LV-00244', client:'Emma Bernard', phone:'06 56 78 90 12', items:[{emoji:'👠',name:'Mules Cuir Beige',size:'38',qty:1,price:650}], total:650, status:'delivered', address:'55 Rue de Rivoli, 75001 Paris', time:'11:05', date:"Aujourd'hui" },
+// --- DONNÉES DE TEST (Flux de commandes pour le MVP) ---
+const INITIAL_ORDERS = [
+  {
+    id: "ORD-8821",
+    customer: "Sarah B.",
+    items: [{ name: "Robe Midi Fleurie", size: "M", qty: 1, price: 490 }],
+    total: 490,
+    status: "new", // new, preparing, ready
+    time: "Il y a 5 min",
+    address: "Anfa Park, Résidence les Palmiers, Casablanca",
+    deliverySlot: "18h - 19h",
+  },
+  {
+    id: "ORD-8815",
+    customer: "Karim T.",
+    items: [
+      { name: "Trench Camel", size: "L", qty: 1, price: 890 },
+      { name: "Chapeau Panama", size: "Unique", qty: 1, price: 189 },
+    ],
+    total: 1079,
+    status: "preparing",
+    time: "Il y a 25 min",
+    address: "Quartier Gauthier, Rue Mozart, Casablanca",
+    deliverySlot: "Dès que possible",
+  },
+  {
+    id: "ORD-8790",
+    customer: "Yasmine M.",
+    items: [{ name: "Blazer Structuré", size: "S", qty: 1, price: 295 }],
+    total: 295,
+    status: "ready",
+    time: "Il y a 1h",
+    address: "Bouskoura, Ville Verte, Casablanca",
+    deliverySlot: "Prévu 19h30",
+  },
 ];
 
-const STATUS_CONFIG = {
-  pending:   { label:'En attente',     cls:'badge-warning', next:'preparing', nextLabel:'Commencer préparation' },
-  preparing: { label:'En préparation', cls:'badge-info',    next:'transit',   nextLabel:'Confier au livreur' },
-  transit:   { label:'En livraison',   cls:'badge-info',    next:'delivered', nextLabel:'Marquer comme livré' },
-  delivered: { label:'Livrée',         cls:'badge-success', next:null,        nextLabel:null },
-};
-
 export default function Orders() {
-  const [orders, setOrders] = useState(ALL_ORDERS);
-  const [filter, setFilter] = useState('all');
-  const [selected, setSelected] = useState(null);
-  const [search, setSearch] = useState('');
+  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [filter, setFilter] = useState("all");
 
-  const filtered = orders
-    .filter(o => filter === 'all' || o.status === filter)
-    .filter(o => !search || o.ref.includes(search) || o.client.toLowerCase().includes(search.toLowerCase()));
+  // 1. MISE À JOUR DU STATUT (LOGIQUE CDC)
+  const updateStatus = (id, newStatus) => {
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === id ? { ...order, status: newStatus } : order
+      )
+    );
 
-  const advanceStatus = (ref) => {
-    setOrders(prev => prev.map(o => {
-      if (o.ref !== ref) return o;
-      const next = STATUS_CONFIG[o.status]?.next;
-      if (!next) return o;
-      toast.success(`Commande ${ref} → ${STATUS_CONFIG[next].label}`);
-      return { ...o, status: next };
-    }));
-    if (selected?.ref === ref) setSelected(prev => ({ ...prev, status: STATUS_CONFIG[prev.status]?.next }));
+    if (newStatus === "preparing")
+      toast.success("Commande acceptée ! Préparation lancée.");
+    if (newStatus === "ready")
+      toast.success("Colis prêt ! Signal envoyé au coursier LIVRR.");
   };
 
-  const TABS = [['all','Toutes',orders.length],['pending','En attente',orders.filter(o=>o.status==='pending').length],['preparing','En préparation',orders.filter(o=>o.status==='preparing').length],['transit','En livraison',orders.filter(o=>o.status==='transit').length],['delivered','Livrées',orders.filter(o=>o.status==='delivered').length]];
+  // 2. IMPRESSION DU BON (OPTIMISÉ POUR BOUTIQUE)
+  const printOrder = (order) => {
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>LIVRR - Bon # ${order.id}</title>
+          <style>
+            body { font-family: 'Helvetica', sans-serif; padding: 30px; line-height: 1.6; }
+            .header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+            .details { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; background: #000; color: #fff; padding: 10px; }
+            td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+            .total { text-align: right; font-weight: bold; font-size: 18px; margin-top: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #888; border-top: 1px dashed #ccc; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 style="margin:0; letter-spacing:2px;">LIVRR</h1>
+            <span>COMMANDE # ${order.id}</span>
+          </div>
+          <div class="details">
+            <p><strong>CLIENT :</strong> ${order.customer}</p>
+            <p><strong>ADRESSE :</strong> ${order.address}</p>
+            <p><strong>LIVRAISON :</strong> ${order.deliverySlot}</p>
+          </div>
+          <table>
+            <thead><tr><th>ARTICLE</th><th>TAILLE</th><th>QTY</th></tr></thead>
+            <tbody>
+              ${order.items
+                .map(
+                  (item) => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.size}</td>
+                  <td>x ${item.qty}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <div class="total">TOTAL : €${order.total}</div>
+          <div class="footer">Document de préparation interne - Ne pas joindre au colis client.</div>
+          <script>window.print(); window.close();</script>
+        </body>
+      </html>
+    `);
+  };
+
+  const filteredOrders = orders.filter(
+    (o) => filter === "all" || o.status === filter
+  );
 
   return (
-    <div className="page" style={{ display:'flex', gap:'24px', height:'calc(100vh - 64px)' }}>
-      {/* List */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
-        <div style={{ marginBottom:'24px' }}>
-          <h1 style={{ fontFamily:'var(--font-display)', fontSize:'36px', fontWeight:'400', marginBottom:'4px' }}>Commandes</h1>
-          <p style={{ color:'var(--gray)', fontSize:'14px' }}>Gérez et suivez vos commandes en temps réel</p>
+    <div className="page">
+      {/* HEADER PAGE */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "32px",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "32px",
+              fontWeight: "400",
+            }}
+          >
+            Commandes
+          </h1>
+          <p
+            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}
+          >
+            Flux opérationnel en temps réel
+          </p>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display:'flex', gap:'0', borderBottom:'1px solid rgba(0,0,0,0.08)', marginBottom:'20px' }}>
-          {TABS.map(([val,label,count]) => (
-            <button key={val} onClick={()=>setFilter(val)} style={{
-              padding:'10px 18px', background:'none', border:'none',
-              borderBottom: filter===val ? '2px solid var(--gold)' : '2px solid transparent',
-              color: filter===val ? 'var(--noir)' : 'var(--gray)',
-              fontWeight: filter===val ? '500' : '400',
-              fontSize:'14px', cursor:'pointer', fontFamily:'var(--font-body)',
-              display:'flex', gap:'6px', alignItems:'center',
-            }}>
-              {label}
-              {count > 0 && <span style={{ background: filter===val ? 'var(--gold)' : 'rgba(0,0,0,0.08)', color: filter===val ? 'var(--noir)' : 'var(--gray)', fontSize:'11px', fontWeight:'600', padding:'1px 7px', borderRadius:'10px' }}>{count}</span>}
+        {/* FILTRES DÉLÉGANCE */}
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            background: "rgba(0,0,0,0.04)",
+            padding: "4px",
+            borderRadius: "14px",
+          }}
+        >
+          {[
+            { id: "all", label: "Toutes" },
+            { id: "new", label: "Nouvelles" },
+            { id: "preparing", label: "En cours" },
+            { id: "ready", label: "Prêtes" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              style={{
+                padding: "8px 18px",
+                borderRadius: "10px",
+                border: "none",
+                fontSize: "13px",
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+                background: filter === f.id ? "var(--white)" : "transparent",
+                color: filter === f.id ? "var(--noir)" : "var(--gray)",
+                fontWeight: filter === f.id ? "600" : "400",
+                boxShadow:
+                  filter === f.id ? "0 4px 12px rgba(0,0,0,0.08)" : "none",
+                transition: "0.3s",
+              }}
+            >
+              {f.label}{" "}
+              {f.id !== "all" && (
+                <span style={{ marginLeft: "4px", opacity: 0.6 }}>
+                  ({orders.filter((o) => o.status === f.id).length})
+                </span>
+              )}
             </button>
           ))}
         </div>
-
-        {/* Search */}
-        <input className="input-field" placeholder="🔍 Rechercher par ref ou client…" value={search} onChange={e=>setSearch(e.target.value)} style={{ marginBottom:'16px', maxWidth:'360px' }} />
-
-        {/* Table */}
-        <div className="card" style={{ padding:0, overflow:'hidden', flex:1, overflowY:'auto' }}>
-          <table className="table">
-            <thead style={{ position:'sticky', top:0, background:'var(--white)', zIndex:1 }}>
-              <tr><th>Référence</th><th>Client</th><th>Articles</th><th>Total</th><th>Statut</th><th>Heure</th><th></th></tr>
-            </thead>
-            <tbody>
-              {filtered.map(o => {
-                const st = STATUS_CONFIG[o.status];
-                return (
-                  <tr key={o.ref} onClick={()=>setSelected(o)} style={{ cursor:'pointer', background: selected?.ref===o.ref ? 'rgba(201,169,110,0.05)' : 'transparent' }}>
-                    <td style={{ fontWeight:'600', fontFamily:'monospace', fontSize:'13px', color:'var(--gold)' }}>{o.ref}</td>
-                    <td style={{ fontWeight:'500' }}>{o.client}</td>
-                    <td style={{ color:'var(--gray)', fontSize:'13px' }}>{o.items.map(i=>`${i.emoji} ${i.name}`).join(', ')}</td>
-                    <td style={{ fontWeight:'600' }}>€{o.total}</td>
-                    <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
-                    <td style={{ color:'var(--gray)', fontSize:'12px' }}>{o.time}</td>
-                    <td>
-                      {st.next && <button className="btn-primary" style={{ padding:'6px 12px', fontSize:'12px' }} onClick={e=>{e.stopPropagation();advanceStatus(o.ref);}}>
-                        {st.nextLabel}
-                      </button>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <div style={{ textAlign:'center', padding:'48px', color:'var(--gray)' }}>
-              <div style={{ fontSize:'36px', marginBottom:'12px' }}>📭</div>
-              <p>Aucune commande dans cette catégorie</p>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Detail panel */}
-      {selected && (
-        <div style={{ width:'340px', flexShrink:0, display:'flex', flexDirection:'column', gap:'14px' }}>
-          <div className="card">
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' }}>
-              <h3 style={{ fontFamily:'var(--font-display)', fontSize:'20px', fontWeight:'400' }}>{selected.ref}</h3>
-              <button onClick={()=>setSelected(null)} style={{ fontSize:'18px', color:'var(--gray)', cursor:'pointer' }}>×</button>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-              <div style={{ background:'var(--white-2)', borderRadius:'var(--radius-md)', padding:'12px' }}>
-                <div style={{ fontSize:'12px', color:'var(--gray)', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Client</div>
-                <div style={{ fontWeight:'500' }}>{selected.client}</div>
-                <div style={{ fontSize:'13px', color:'var(--gray)' }}>{selected.phone}</div>
-              </div>
-              <div style={{ background:'var(--white-2)', borderRadius:'var(--radius-md)', padding:'12px' }}>
-                <div style={{ fontSize:'12px', color:'var(--gray)', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Adresse de livraison</div>
-                <div style={{ fontSize:'14px' }}>📍 {selected.address}</div>
-              </div>
+      {/* LISTE DES COMMANDES */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {filteredOrders.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              textAlign: "center",
+              padding: "80px",
+              color: "var(--gray)",
+              border: "1px dashed #ddd",
+            }}
+          >
+            <div style={{ fontSize: "40px", marginBottom: "16px" }}>📦</div>
+            <p>Aucune commande dans cette section pour le moment.</p>
+          </div>
+        ) : (
+          filteredOrders.map((order) => (
+            <div
+              key={order.id}
+              className="card"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 2fr 1.5fr 1fr",
+                alignItems: "center",
+                gap: "30px",
+                padding: "24px",
+                borderLeft:
+                  order.status === "new"
+                    ? "6px solid var(--gold)"
+                    : "1px solid rgba(0,0,0,0.05)",
+                transition: "0.2s",
+                position: "relative",
+              }}
+            >
+              {/* COL 1: ID & TIME */}
               <div>
-                <div style={{ fontSize:'12px', color:'var(--gray)', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Articles</div>
-                {selected.items.map((item,i) => (
-                  <div key={i} style={{ display:'flex', gap:'10px', alignItems:'center', padding:'8px 0', borderBottom:'1px solid rgba(0,0,0,0.05)' }}>
-                    <span style={{ fontSize:'24px' }}>{item.emoji}</span>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:'14px', fontWeight:'500' }}>{item.name}</div>
-                      {item.size && <div style={{ fontSize:'12px', color:'var(--gray)' }}>Taille {item.size} · ×{item.qty}</div>}
-                    </div>
-                    <div style={{ fontWeight:'500' }}>€{item.price * item.qty}</div>
-                  </div>
-                ))}
-                <div style={{ display:'flex', justifyContent:'space-between', fontWeight:'600', fontSize:'16px', marginTop:'12px', paddingTop:'8px', borderTop:'1px solid rgba(0,0,0,0.08)' }}>
-                  <span>Total</span><span>€{selected.total}</span>
+                <div
+                  style={{
+                    fontWeight: "800",
+                    fontSize: "18px",
+                    letterSpacing: "-0.5px",
+                  }}
+                >
+                  #{order.id}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--gray)",
+                    marginTop: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span style={{ color: "var(--gold)" }}>●</span> {order.time}
                 </div>
               </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginTop:'4px' }}>
-                {STATUS_CONFIG[selected.status]?.next && (
-                  <button className="btn-primary" style={{ width:'100%', padding:'12px' }} onClick={()=>advanceStatus(selected.ref)}>
-                    ✓ {STATUS_CONFIG[selected.status]?.nextLabel}
+
+              {/* COL 2: CUSTOMER & ITEMS */}
+              <div>
+                <div
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "15px",
+                    color: "var(--noir)",
+                  }}
+                >
+                  {order.customer}
+                </div>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#666",
+                    marginTop: "4px",
+                    lineHeight: "1.4",
+                  }}
+                >
+                  {order.items
+                    .map((i) => `${i.qty}x ${i.name} [Size ${i.size}]`)
+                    .join(", ")}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--gray)",
+                    marginTop: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  📍 {order.address}
+                </div>
+              </div>
+
+              {/* COL 3: STATUS & SLOT */}
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    display: "inline-block",
+                    padding: "6px 14px",
+                    borderRadius: "30px",
+                    fontSize: "10px",
+                    fontWeight: "800",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                    background:
+                      order.status === "new"
+                        ? "#FFFBEB"
+                        : order.status === "preparing"
+                        ? "#EFF6FF"
+                        : "#F0FDF4",
+                    color:
+                      order.status === "new"
+                        ? "#B45309"
+                        : order.status === "preparing"
+                        ? "#1D4ED8"
+                        : "#15803D",
+                    border: `1px solid ${
+                      order.status === "new"
+                        ? "#FEF3C7"
+                        : order.status === "preparing"
+                        ? "#DBEAFE"
+                        : "#DCFCE7"
+                    }`,
+                  }}
+                >
+                  {order.status === "new"
+                    ? "À Valider"
+                    : order.status === "preparing"
+                    ? "Préparation"
+                    : "Prête / En attente"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    marginTop: "10px",
+                    color: "var(--noir)",
+                    fontWeight: "500",
+                  }}
+                >
+                  🕒 Slot : {order.deliverySlot}
+                </div>
+              </div>
+
+              {/* COL 4: ACTIONS (LE CŒUR DU CDC) */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <button
+                  className="btn-outline"
+                  onClick={() => printOrder(order)}
+                  title="Imprimer le bon de préparation"
+                  style={{
+                    width: "42px",
+                    height: "42px",
+                    padding: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "10px",
+                  }}
+                >
+                  🖨️
+                </button>
+
+                {order.status === "new" && (
+                  <button
+                    className="btn-gold"
+                    style={{
+                      padding: "0 24px",
+                      height: "42px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                    }}
+                    onClick={() => updateStatus(order.id, "preparing")}
+                  >
+                    Accepter
                   </button>
                 )}
-                <button className="btn-outline" style={{ width:'100%', padding:'12px', fontSize:'13px' }}>
-                  📞 Appeler le client
-                </button>
+
+                {order.status === "preparing" && (
+                  <button
+                    className="btn-gold"
+                    style={{
+                      padding: "0 24px",
+                      height: "42px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      background: "#000",
+                      color: "#fff",
+                    }}
+                    onClick={() => updateStatus(order.id, "ready")}
+                  >
+                    Prêt
+                  </button>
+                )}
+
+                {order.status === "ready" && (
+                  <div style={{ textAlign: "right" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--success)",
+                        fontWeight: "700",
+                      }}
+                    >
+                      PRÊTE ✅
+                    </div>
+                    <div style={{ fontSize: "10px", color: "var(--gray)" }}>
+                      Coursier notifié
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
