@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import toast from "react-hot-toast";
 
 export default function Sidebar() {
-  const { logout, boutique } = useAuth();
-  const navigate = useNavigate();
-
-  // Nom de la boutique (Peut être dynamique via boutique?.name plus tard)
+  const { logout } = useAuth();
   const storeName = "Sandro Paris";
-
-  // État pour gérer l'ouverture des dossiers (Accords)
   const [openSub, setOpenSub] = useState("dashboard");
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
 
   const menuGroups = [
     {
@@ -38,6 +37,7 @@ export default function Sidebar() {
       label: "QR CODE & ACCÈS",
       icon: "🏷️",
       subItems: [
+        { path: "/qrcode", label: "QR Code boutique" },
         { path: "/produits", label: "Produits de la boutique" },
         { path: "/categories", label: "Catégories" },
       ],
@@ -61,6 +61,15 @@ export default function Sidebar() {
       subItems: [{ path: "/marketing", label: "Coupons de réduction" }],
     },
     {
+      id: "services",
+      label: "SERVICES ANNEXES",
+      icon: "✨",
+      subItems: [
+        { path: "/services", label: "Catalogue des services" },
+        { path: "/services", label: "Réservations" },
+      ],
+    },
+    {
       id: "settings",
       label: "PARAMÈTRES",
       icon: "⚙️",
@@ -81,7 +90,6 @@ export default function Sidebar() {
         zIndex: 100,
       }}
     >
-      {/* 1. LOGO */}
       <div style={{ padding: "30px 24px 10px 24px", textAlign: "center" }}>
         <h1
           style={{
@@ -102,11 +110,9 @@ export default function Sidebar() {
             marginTop: "4px",
           }}
         >
-          ADMIN BOUTIQUE
+          ESPACE BOUTIQUE
         </div>
       </div>
-
-      {/* 2. NOM DE LA BOUTIQUE (AJOUTÉ ICI) */}
       <div
         style={{
           padding: "20px 24px",
@@ -164,8 +170,6 @@ export default function Sidebar() {
           </span>
         </div>
       </div>
-
-      {/* 3. NAVIGATION */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "0 12px" }}>
         {menuGroups.map((group) => (
           <div key={group.id} style={{ marginBottom: "8px" }}>
@@ -199,7 +203,6 @@ export default function Sidebar() {
                 {openSub === group.id ? "▼" : "▶"}
               </span>
             </div>
-
             {openSub === group.id && (
               <div
                 style={{
@@ -210,9 +213,9 @@ export default function Sidebar() {
                   gap: "2px",
                 }}
               >
-                {group.subItems.map((sub) => (
+                {group.subItems.map((sub, idx) => (
                   <NavLink
-                    key={sub.path}
+                    key={sub.path + idx}
                     to={sub.path}
                     className={({ isActive }) =>
                       isActive ? "sub-active" : "sub-link"
@@ -235,8 +238,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-
-      {/* 4. DÉCONNEXION */}
       <div
         style={{
           padding: "20px",
@@ -244,10 +245,7 @@ export default function Sidebar() {
         }}
       >
         <button
-          onClick={() => {
-            logout();
-            navigate("/login");
-          }}
+          onClick={handleLogout}
           style={{
             width: "100%",
             color: "var(--error)",
@@ -261,13 +259,9 @@ export default function Sidebar() {
           ● DÉCONNEXION
         </button>
       </div>
-
       <style
         dangerouslySetInnerHTML={{
-          __html: `
-        .sub-link:hover { color: #fff !important; background: rgba(255,255,255,0.05); }
-        .sub-active { color: var(--gold) !important; background: rgba(201, 169, 110, 0.1) !important; font-weight: 600; border-right: 2px solid var(--gold); }
-      `,
+          __html: `.sub-link:hover { color: #fff !important; background: rgba(255,255,255,0.05); } .sub-active { color: var(--gold) !important; background: rgba(201, 169, 110, 0.1) !important; font-weight: 600; border-right: 2px solid var(--gold); }`,
         }}
       />
     </div>

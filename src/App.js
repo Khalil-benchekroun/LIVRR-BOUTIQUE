@@ -9,10 +9,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import "./index.css";
 
-// --- IMPORTATION DES COMPOSANTS ---
 import Sidebar from "./components/Sidebar";
-
-// --- IMPORTATION DES PAGES EXISTANTES ---
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -23,19 +20,15 @@ import Marketing from "./pages/Marketing";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import Stats from "./pages/Stats";
-
-// --- NOUVELLES PAGES (ARBORESCENCE CDC) ---
 import POS from "./pages/POS";
 import Returns from "./pages/Returns";
 import Vendors from "./pages/Vendors";
 import Categories from "./pages/Categories";
+import QRCodePage from "./pages/QRCode";
+import Services from "./pages/Services";
 
-/**
- * Sécurisation des routes
- */
 function PrivateRoute({ children }) {
   const { boutique, loading } = useAuth();
-
   if (loading) {
     return (
       <div
@@ -50,13 +43,9 @@ function PrivateRoute({ children }) {
       </div>
     );
   }
-
   return boutique ? children : <Navigate to="/login" />;
 }
 
-/**
- * Layout avec Sidebar fixe et contenu scrollable
- */
 function AppLayout({ children }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F4F2EE" }}>
@@ -80,7 +69,6 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        {/* Configuration des notifications */}
         <Toaster
           position="top-right"
           toastOptions={{
@@ -92,15 +80,9 @@ export default function App() {
             },
           }}
         />
-
         <Routes>
-          {/* ACCÈS PUBLIC */}
           <Route path="/login" element={<Login />} />
           <Route path="/inscription" element={<Onboarding />} />
-
-          {/* ACCÈS PRIVÉ (BOUTIQUE) */}
-
-          {/* 1. DATA VISUALISATION */}
           <Route
             path="/"
             element={
@@ -121,8 +103,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* 2. GESTION DES COMMANDES (Inclus POS & Retours) */}
           <Route
             path="/commandes"
             element={
@@ -153,8 +133,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* 3. CATALOGUE & ACCÈS (Produits & Catégories) */}
           <Route
             path="/produits"
             element={
@@ -175,8 +153,16 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* 4. PROMOTION & MARKETING */}
+          <Route
+            path="/qrcode"
+            element={
+              <PrivateRoute>
+                <AppLayout>
+                  <QRCodePage />
+                </AppLayout>
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/marketing"
             element={
@@ -187,8 +173,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* 5. GESTION DU PERSONNEL & CLIENTS */}
           <Route
             path="/vendeurs"
             element={
@@ -209,8 +193,16 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* 6. COMMUNICATION & PARAMÈTRES */}
+          <Route
+            path="/services"
+            element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Services />
+                </AppLayout>
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/messages"
             element={
@@ -231,8 +223,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {/* REDIRECTION PAR DÉFAUT */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
