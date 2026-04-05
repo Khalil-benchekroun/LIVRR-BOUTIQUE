@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
-// --- DONNÉES DE TEST (Flux de commandes pour le MVP) ---
 const INITIAL_ORDERS = [
   {
     id: "ORD-8821",
     customer: "Sarah B.",
     items: [{ name: "Robe Midi Fleurie", size: "M", qty: 1, price: 490 }],
     total: 490,
-    status: "new", // new, preparing, ready
+    status: "new",
     time: "Il y a 5 min",
     address: "Anfa Park, Résidence les Palmiers, Casablanca",
     deliverySlot: "18h - 19h",
+    assignedVendor: null,
   },
   {
     id: "ORD-8815",
@@ -25,6 +25,7 @@ const INITIAL_ORDERS = [
     time: "Il y a 25 min",
     address: "Quartier Gauthier, Rue Mozart, Casablanca",
     deliverySlot: "Dès que possible",
+    assignedVendor: null,
   },
   {
     id: "ORD-8790",
@@ -35,28 +36,83 @@ const INITIAL_ORDERS = [
     time: "Il y a 1h",
     address: "Bouskoura, Ville Verte, Casablanca",
     deliverySlot: "Prévu 19h30",
+    assignedVendor: null,
+  },
+];
+
+const INITIAL_STAFF = [
+  { id: 1, name: "Siham B.", role: "Manager", status: "En poste", sales: 45 },
+  {
+    id: 2,
+    name: "Youssef L.",
+    role: "Vendeur Senior",
+    status: "En poste",
+    sales: 32,
+  },
+  {
+    id: 3,
+    name: "Amine R.",
+    role: "Vendeur Junior",
+    status: "Repos",
+    sales: 12,
   },
 ];
 
 export default function Orders() {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [staff, setStaff] = useState(INITIAL_STAFF);
   const [filter, setFilter] = useState("all");
 
-  // 1. MISE À JOUR DU STATUT (LOGIQUE CDC)
+  // Modal assignation vendeur
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState(null);
+  const [selectedVendorId, setSelectedVendorId] = useState(null);
+
+  // Ouvre le modal avant d'accepter
+  const handleAcceptClick = (orderId) => {
+    setPendingOrderId(orderId);
+    setSelectedVendorId(null);
+    setShowVendorModal(true);
+  };
+
+  // Confirme l'assignation et passe en préparation
+  const handleConfirmVendor = () => {
+    if (!selectedVendorId)
+      return toast.error("Veuillez sélectionner un vendeur");
+    const vendor = staff.find((s) => s.id === selectedVendorId);
+
+    // Met à jour la commande
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === pendingOrderId
+          ? { ...order, status: "preparing", assignedVendor: vendor.name }
+          : order
+      )
+    );
+
+    // Incrémente les ventes du vendeur
+    setStaff((prev) =>
+      prev.map((s) =>
+        s.id === selectedVendorId ? { ...s, sales: s.sales + 1 } : s
+      )
+    );
+
+    toast.success(`Commande assignée à ${vendor.name} — Préparation lancée !`);
+    setShowVendorModal(false);
+    setPendingOrderId(null);
+    setSelectedVendorId(null);
+  };
+
   const updateStatus = (id, newStatus) => {
     setOrders((prev) =>
       prev.map((order) =>
         order.id === id ? { ...order, status: newStatus } : order
       )
     );
-
-    if (newStatus === "preparing")
-      toast.success("Commande acceptée ! Préparation lancée.");
     if (newStatus === "ready")
       toast.success("Colis prêt ! Signal envoyé au coursier LIVRR.");
   };
 
-  // 2. IMPRESSION DU BON (OPTIMISÉ POUR BOUTIQUE)
   const printOrder = (order) => {
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
@@ -83,19 +139,19 @@ export default function Orders() {
             <p><strong>CLIENT :</strong> ${order.customer}</p>
             <p><strong>ADRESSE :</strong> ${order.address}</p>
             <p><strong>LIVRAISON :</strong> ${order.deliverySlot}</p>
+            ${
+              order.assignedVendor
+                ? `<p><strong>VENDEUR :</strong> ${order.assignedVendor}</p>`
+                : ""
+            }
           </div>
           <table>
             <thead><tr><th>ARTICLE</th><th>TAILLE</th><th>QTY</th></tr></thead>
             <tbody>
               ${order.items
                 .map(
-                  (item) => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>${item.size}</td>
-                  <td>x ${item.qty}</td>
-                </tr>
-              `
+                  (item) =>
+                    `<tr><td>${item.name}</td><td>${item.size}</td><td>x ${item.qty}</td></tr>`
                 )
                 .join("")}
             </tbody>
@@ -114,7 +170,7 @@ export default function Orders() {
 
   return (
     <div className="page">
-      {/* HEADER PAGE */}
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -139,8 +195,6 @@ export default function Orders() {
             Flux opérationnel en temps réel
           </p>
         </div>
-
-        {/* FILTRES DÉLÉGANCE */}
         <div
           style={{
             display: "flex",
@@ -174,7 +228,7 @@ export default function Orders() {
                 transition: "0.3s",
               }}
             >
-              {f.label}{" "}
+              {f.label}
               {f.id !== "all" && (
                 <span style={{ marginLeft: "4px", opacity: 0.6 }}>
                   ({orders.filter((o) => o.status === f.id).length})
@@ -185,7 +239,7 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* LISTE DES COMMANDES */}
+      {/* LISTE */}
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {filteredOrders.length === 0 ? (
           <div
@@ -219,7 +273,7 @@ export default function Orders() {
                 position: "relative",
               }}
             >
-              {/* COL 1: ID & TIME */}
+              {/* COL 1 */}
               <div>
                 <div
                   style={{
@@ -242,9 +296,21 @@ export default function Orders() {
                 >
                   <span style={{ color: "var(--gold)" }}>●</span> {order.time}
                 </div>
+                {order.assignedVendor && (
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--info)",
+                      marginTop: "6px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    👤 {order.assignedVendor}
+                  </div>
+                )}
               </div>
 
-              {/* COL 2: CUSTOMER & ITEMS */}
+              {/* COL 2 */}
               <div>
                 <div
                   style={{
@@ -281,7 +347,7 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* COL 3: STATUS & SLOT */}
+              {/* COL 3 */}
               <div style={{ textAlign: "center" }}>
                 <div
                   style={{
@@ -331,7 +397,7 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* COL 4: ACTIONS (LE CŒUR DU CDC) */}
+              {/* COL 4 */}
               <div
                 style={{
                   display: "flex",
@@ -342,7 +408,7 @@ export default function Orders() {
                 <button
                   className="btn-outline"
                   onClick={() => printOrder(order)}
-                  title="Imprimer le bon de préparation"
+                  title="Imprimer le bon"
                   style={{
                     width: "42px",
                     height: "42px",
@@ -365,7 +431,7 @@ export default function Orders() {
                       fontSize: "13px",
                       fontWeight: "600",
                     }}
-                    onClick={() => updateStatus(order.id, "preparing")}
+                    onClick={() => handleAcceptClick(order.id)}
                   >
                     Accepter
                   </button>
@@ -409,6 +475,170 @@ export default function Orders() {
           ))
         )}
       </div>
+
+      {/* ====== MODAL ASSIGNATION VENDEUR ====== */}
+      {showVendorModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowVendorModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "30px",
+              width: "100%",
+              maxWidth: "460px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "24px",
+                marginBottom: "6px",
+              }}
+            >
+              Assigner un vendeur
+            </h3>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--gray)",
+                marginBottom: "24px",
+              }}
+            >
+              Sélectionnez le vendeur qui va préparer la commande{" "}
+              <strong>#{pendingOrderId}</strong>
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                marginBottom: "24px",
+              }}
+            >
+              {staff.map((member) => (
+                <div
+                  key={member.id}
+                  onClick={() => setSelectedVendorId(member.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "14px",
+                    padding: "14px 16px",
+                    borderRadius: "12px",
+                    border: `1.5px solid ${
+                      selectedVendorId === member.id
+                        ? "var(--gold)"
+                        : "rgba(0,0,0,0.08)"
+                    }`,
+                    background:
+                      selectedVendorId === member.id
+                        ? "rgba(201,169,110,0.06)"
+                        : "#FAFAF8",
+                    cursor: "pointer",
+                    transition: "var(--transition)",
+                    opacity: member.status === "Repos" ? 0.5 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "42px",
+                      height: "42px",
+                      borderRadius: "50%",
+                      background:
+                        selectedVendorId === member.id
+                          ? "var(--gold)"
+                          : "var(--gold-light)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "16px",
+                      fontWeight: "700",
+                      color:
+                        selectedVendorId === member.id
+                          ? "#fff"
+                          : "var(--gold-dark)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {member.name.charAt(0)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "700", fontSize: "14px" }}>
+                      {member.name}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+                      {member.role} · {member.sales} ventes ce mois
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "4px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color:
+                          member.status === "En poste"
+                            ? "var(--success)"
+                            : "var(--gray)",
+                      }}
+                    >
+                      ● {member.status}
+                    </span>
+                    {selectedVendorId === member.id && (
+                      <span
+                        style={{
+                          color: "var(--gold)",
+                          fontWeight: "700",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn-gold"
+                style={{ flex: 2 }}
+                onClick={handleConfirmVendor}
+              >
+                Confirmer & Lancer la préparation
+              </button>
+              <button
+                className="btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowVendorModal(false)}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
