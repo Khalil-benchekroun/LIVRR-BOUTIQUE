@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -59,35 +59,109 @@ const ALERTS = [
   },
 ];
 
+const STATS = [
+  {
+    label: "Commandes aujourd'hui",
+    target: 12,
+    suffix: "",
+    sub: "+3 depuis hier",
+    trend: "up",
+  },
+  {
+    label: "Chiffre du jour",
+    target: 4820,
+    suffix: " €",
+    sub: "+12% vs hier",
+    trend: "up",
+  },
+  {
+    label: "En cours de livraison",
+    target: 3,
+    suffix: "",
+    sub: "Livraison < 1h",
+    trend: null,
+  },
+  {
+    label: "Note moyenne",
+    target: 4.8,
+    suffix: " ★",
+    sub: "Sur 248 avis",
+    trend: null,
+  },
+];
+
+function AnimatedNumber({ target, suffix, duration = 1200 }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const isFloat = !Number.isInteger(target);
+    const steps = 40;
+    const interval = duration / steps;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      const progress = step / steps;
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      setDisplay(isFloat ? current.toFixed(1) : Math.floor(current));
+      if (step >= steps) clearInterval(timer);
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [target, duration]);
+
+  return (
+    <span>
+      {display}
+      {suffix}
+    </span>
+  );
+}
+
 export default function Dashboard() {
   const { boutique } = useAuth();
+  const [visible, setVisible] = useState(false);
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
 
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="page">
-      {/* Header */}
-      <div style={{ marginBottom: "32px" }}>
+      {/* ── HEADER ── */}
+      <div
+        style={{
+          marginBottom: "36px",
+          animation: "slideInLeft 0.5s ease forwards",
+        }}
+      >
         <div
           style={{
             fontSize: "13px",
             color: "var(--gray)",
-            marginBottom: "4px",
+            marginBottom: "6px",
+            letterSpacing: "0.03em",
           }}
         >
-          {greeting} 👋
+          {greeting} &nbsp;👋
         </div>
         <h1
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: "36px",
+            fontSize: "44px",
             fontWeight: "400",
+            lineHeight: 1.1,
+            marginBottom: "8px",
           }}
         >
-          {boutique?.name}
+          {boutique?.name || "Sandro Paris"}
         </h1>
-        <p style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}>
+        <p style={{ color: "var(--gray)", fontSize: "14px" }}>
           {new Date().toLocaleDateString("fr-FR", {
             weekday: "long",
             year: "numeric",
@@ -95,90 +169,105 @@ export default function Dashboard() {
             day: "numeric",
           })}
         </p>
+        {/* Ligne décorative */}
+        <div
+          style={{
+            marginTop: "20px",
+            height: "1px",
+            background:
+              "linear-gradient(90deg, var(--gold-light), transparent)",
+            width: "120px",
+          }}
+        />
       </div>
 
-      {/* Alerts */}
-      {ALERTS.map((a, i) => (
-        <div
-          key={i}
-          style={{
-            background: a.color,
-            border: `1px solid ${a.border}22`,
-            borderLeft: `3px solid ${a.border}`,
-            borderRadius: "var(--radius-md)",
-            padding: "12px 16px",
-            marginBottom: "12px",
-            display: "flex",
-            gap: "10px",
-            alignItems: "center",
-            fontSize: "14px",
-          }}
-        >
-          <span>{a.icon}</span>
-          <span>{a.text}</span>
-        </div>
-      ))}
+      {/* ── ALERTES ── */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          marginBottom: "32px",
+        }}
+      >
+        {ALERTS.map((a, i) => (
+          <div
+            key={i}
+            style={{
+              background: a.color,
+              border: `1px solid ${a.border}22`,
+              borderLeft: `3px solid ${a.border}`,
+              borderRadius: "var(--radius-md)",
+              padding: "13px 18px",
+              display: "flex",
+              gap: "12px",
+              alignItems: "center",
+              fontSize: "14px",
+              animation: `slideInRight 0.4s ease ${i * 0.1}s both`,
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>{a.icon}</span>
+            <span style={{ fontWeight: "500" }}>{a.text}</span>
+          </div>
+        ))}
+      </div>
 
-      {/* Stats */}
+      {/* ── STAT CARDS ── */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "16px",
-          margin: "28px 0",
+          gap: "18px",
+          marginBottom: "32px",
         }}
       >
-        {[
-          {
-            label: "Commandes aujourd'hui",
-            value: "12",
-            sub: "+3 depuis hier",
-            trend: "up",
-          },
-          {
-            label: "Chiffre du jour",
-            value: "4 820 €",
-            sub: "+12% vs hier",
-            trend: "up",
-          },
-          {
-            label: "En cours de livraison",
-            value: "3",
-            sub: "Livraison < 1h",
-            trend: null,
-          },
-          {
-            label: "Note moyenne",
-            value: "4.8 ★",
-            sub: "Sur 248 avis",
-            trend: null,
-          },
-        ].map((s) => (
-          <div key={s.label} className="stat-card">
+        {STATS.map((s, i) => (
+          <div
+            key={s.label}
+            className="stat-card gold-top"
+            style={{
+              animationDelay: `${0.1 + i * 0.08}s`,
+              opacity: 0,
+            }}
+          >
             <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: "28px" }}>
-              {s.value}
+            <div className="stat-value" style={{ fontSize: "36px" }}>
+              {visible ? (
+                <AnimatedNumber
+                  target={s.target}
+                  suffix={s.suffix}
+                  duration={1000 + i * 150}
+                />
+              ) : (
+                `0${s.suffix}`
+              )}
             </div>
-            <div
-              className={s.trend === "up" ? "stat-trend-up" : "stat-sub"}
-              style={{ marginTop: "6px", fontSize: "12px" }}
-            >
-              {s.trend === "up" ? "↑ " : ""}
+            <div className={s.trend === "up" ? "stat-trend-up" : "stat-sub"}>
+              {s.trend === "up" && "↑ "}
               {s.sub}
             </div>
           </div>
         ))}
       </div>
 
+      {/* ── GRILLE PRINCIPALE ── */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 320px",
-          gap: "20px",
+          gap: "22px",
         }}
       >
-        {/* Recent orders */}
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        {/* Commandes récentes */}
+        <div
+          className="card"
+          style={{
+            padding: 0,
+            overflow: "hidden",
+            animation: "fadeUp 0.6s 0.3s ease both",
+          }}
+        >
           <div
             style={{
               padding: "20px 24px",
@@ -186,12 +275,14 @@ export default function Dashboard() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              background:
+                "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, transparent 100%)",
             }}
           >
             <h3
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "20px",
+                fontSize: "22px",
                 fontWeight: "400",
               }}
             >
@@ -200,12 +291,19 @@ export default function Dashboard() {
             <Link
               to="/commandes"
               style={{
-                fontSize: "13px",
+                fontSize: "12px",
                 color: "var(--gold)",
-                fontWeight: "500",
+                fontWeight: "600",
+                letterSpacing: "0.04em",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                transition: "var(--transition)",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.gap = "8px")}
+              onMouseLeave={(e) => (e.currentTarget.style.gap = "4px")}
             >
-              Voir tout →
+              Voir tout <span>→</span>
             </Link>
           </div>
           <table className="table">
@@ -220,28 +318,41 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {RECENT_ORDERS.map((o) => {
+              {RECENT_ORDERS.map((o, i) => {
                 const st = STATUS_MAP[o.status];
                 return (
-                  <tr key={o.ref}>
-                    <td
-                      style={{
-                        fontWeight: "500",
-                        fontFamily: "monospace",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {o.ref}
+                  <tr
+                    key={o.ref}
+                    style={{
+                      animation: `fadeUp 0.4s ${0.4 + i * 0.06}s ease both`,
+                      opacity: 0,
+                    }}
+                  >
+                    <td>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: "600",
+                          fontSize: "15px",
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        {o.ref}
+                      </span>
                     </td>
-                    <td>{o.client}</td>
+                    <td style={{ fontWeight: "500" }}>{o.client}</td>
                     <td style={{ color: "var(--gray)", fontSize: "13px" }}>
                       {o.items}
                     </td>
-                    <td style={{ fontWeight: "500" }}>€{o.total}</td>
+                    <td style={{ fontWeight: "700", fontSize: "14px" }}>
+                      {o.total} €
+                    </td>
                     <td>
                       <span className={`badge ${st.cls}`}>{st.label}</span>
                     </td>
-                    <td style={{ color: "var(--gray)", fontSize: "12px" }}>
+                    <td
+                      style={{ color: "var(--gray-light)", fontSize: "12px" }}
+                    >
                       {o.time}
                     </td>
                   </tr>
@@ -251,20 +362,25 @@ export default function Dashboard() {
           </table>
         </div>
 
-        {/* Quick actions + stock */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div className="card">
+        {/* Colonne droite */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+          {/* Actions rapides */}
+          <div
+            className="card"
+            style={{ animation: "fadeUp 0.6s 0.4s ease both" }}
+          >
             <h4
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "18px",
-                marginBottom: "16px",
+                fontSize: "20px",
+                marginBottom: "18px",
+                fontWeight: "400",
               }}
             >
               Actions rapides
             </h4>
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "6px" }}
             >
               {[
                 { icon: "➕", label: "Ajouter un produit", path: "/produits" },
@@ -279,41 +395,63 @@ export default function Dashboard() {
                   label: "Créer une promotion",
                   path: "/marketing",
                 },
-              ].map((a) => (
+              ].map((a, i) => (
                 <Link
                   key={a.label}
                   to={a.path}
                   style={{
                     display: "flex",
-                    gap: "10px",
+                    gap: "12px",
                     alignItems: "center",
-                    padding: "10px 12px",
+                    padding: "11px 14px",
                     borderRadius: "var(--radius-md)",
                     background: "var(--white-2)",
-                    fontSize: "14px",
-                    transition: "var(--transition)",
+                    fontSize: "13px",
+                    fontWeight: "500",
                     color: "var(--noir)",
+                    transition: "all var(--transition)",
+                    border: "1px solid transparent",
+                    animation: `fadeUp 0.4s ${0.5 + i * 0.07}s ease both`,
+                    opacity: 0,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "var(--gold-light)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "var(--white-2)")
-                  }
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--gold-lighter)";
+                    e.currentTarget.style.borderColor = "var(--gold-light)";
+                    e.currentTarget.style.transform = "translateX(4px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "var(--white-2)";
+                    e.currentTarget.style.borderColor = "transparent";
+                    e.currentTarget.style.transform = "translateX(0)";
+                  }}
                 >
-                  <span>{a.icon}</span>
+                  <span style={{ fontSize: "16px" }}>{a.icon}</span>
                   <span>{a.label}</span>
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      color: "var(--gray-light)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    ›
+                  </span>
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="card">
+          {/* Stocks critiques */}
+          <div
+            className="card"
+            style={{ animation: "fadeUp 0.6s 0.5s ease both" }}
+          >
             <h4
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "18px",
-                marginBottom: "16px",
+                fontSize: "20px",
+                marginBottom: "18px",
+                fontWeight: "400",
               }}
             >
               Stocks critiques
@@ -322,27 +460,50 @@ export default function Dashboard() {
               { name: "Robe Midi Fleurie", stock: 2, emoji: "👗" },
               { name: "Mules Beige T38", stock: 1, emoji: "👠" },
               { name: "Trench Camel S", stock: 3, emoji: "🧥" },
-            ].map((p) => (
+            ].map((p, i) => (
               <div
                 key={p.name}
                 style={{
                   display: "flex",
-                  gap: "10px",
+                  gap: "12px",
                   alignItems: "center",
-                  marginBottom: "10px",
-                  padding: "8px 0",
-                  borderBottom: "1px solid rgba(0,0,0,0.05)",
+                  padding: "12px 0",
+                  borderBottom: i < 2 ? "1px solid rgba(0,0,0,0.05)" : "none",
+                  animation: `fadeUp 0.4s ${0.6 + i * 0.07}s ease both`,
+                  opacity: 0,
                 }}
               >
-                <span style={{ fontSize: "20px" }}>{p.emoji}</span>
+                <div
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "10px",
+                    background:
+                      p.stock <= 2 ? "var(--error-bg)" : "var(--warning-bg)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "18px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {p.emoji}
+                </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", fontWeight: "500" }}>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      marginBottom: "2px",
+                    }}
+                  >
                     {p.name}
                   </div>
                   <div
                     style={{
                       fontSize: "11px",
                       color: p.stock <= 2 ? "var(--error)" : "var(--warning)",
+                      fontWeight: "600",
                     }}
                   >
                     ⚠ {p.stock} restant{p.stock > 1 ? "s" : ""}
@@ -351,9 +512,21 @@ export default function Dashboard() {
                 <Link
                   to="/produits"
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11px",
                     color: "var(--gold)",
-                    fontWeight: "500",
+                    fontWeight: "700",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    padding: "5px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--gold-light)",
+                    transition: "all var(--transition)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--gold-lighter)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
                   }}
                 >
                   Gérer
