@@ -895,3 +895,49 @@ select {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ============================================
+   POS PAGE — LAYOUT FIXE
+   ============================================ */
+
+.pos-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  height: 100vh;
+  padding: 28px 28px 28px 36px;
+  box-sizing: border-box;
+  background: var(--gray-bg);
+  overflow: hidden;
+}
+
+.pos-left {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.pos-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pos-right-scroll {
+  flex: 1;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+  min-height: 0;
+}
+
+.pos-right-btn {
+  flex-shrink: 0;
+  padding-top: 10px;
+}

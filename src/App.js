@@ -65,6 +65,24 @@ function AppLayout({ children }) {
   );
 }
 
+function AppLayoutFixed({ children }) {
+  return (
+    <div style={{ height: "100vh", overflow: "hidden", background: "#F4F2EE" }}>
+      <Sidebar />
+      <main
+        style={{
+          marginLeft: "260px",
+          height: "100vh",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {children}
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
