@@ -60,6 +60,24 @@ const menuGroups = [
     ],
   },
   {
+    id: "livraisons",
+    label: "LIVRAISONS",
+    icon: "🛵",
+    subItems: [{ path: "/livraisons", label: "Suivi en temps réel" }],
+  },
+  {
+    id: "avis",
+    label: "AVIS & RÉPUTATION",
+    icon: "⭐",
+    subItems: [{ path: "/avis", label: "Avis clients", badge: 2 }],
+  },
+  {
+    id: "calendrier",
+    label: "DISPONIBILITÉS",
+    icon: "📅",
+    subItems: [{ path: "/calendrier", label: "Calendrier" }],
+  },
+  {
     id: "messages",
     label: "MESSAGES & SUPPORT",
     icon: "💬",
@@ -86,11 +104,11 @@ export default function Sidebar() {
   const { logout } = useAuth();
   const location = useLocation();
   const storeName = "Sandro Paris";
-
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState([
     {
       id: 1,
+      type: "order",
       icon: "📦",
       text: "Nouvelle commande #LV-00249 — Sophie M.",
       time: "Il y a 2 min",
@@ -98,6 +116,7 @@ export default function Sidebar() {
     },
     {
       id: 2,
+      type: "stock",
       icon: "⚠️",
       text: "Stock faible : Robe Midi Fleurie (2 restants)",
       time: "Il y a 15 min",
@@ -105,6 +124,7 @@ export default function Sidebar() {
     },
     {
       id: 3,
+      type: "payment",
       icon: "💳",
       text: "Versement de 1 284 € effectué sur votre compte",
       time: "Il y a 1h",
@@ -112,6 +132,7 @@ export default function Sidebar() {
     },
     {
       id: 4,
+      type: "return",
       icon: "↩️",
       text: "Demande de retour — Commande #LV-00220",
       time: "Il y a 2h",
@@ -119,13 +140,13 @@ export default function Sidebar() {
     },
     {
       id: 5,
+      type: "psp",
       icon: "⏳",
       text: "Fonds disponibles : 712 € après délai PSP",
       time: "Il y a 3h",
       read: true,
     },
   ]);
-
   const unreadCount = notifs.filter((n) => !n.read).length;
   const markAllRead = () =>
     setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -134,6 +155,7 @@ export default function Sidebar() {
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
 
+  // Détermine quel groupe est actif selon l'URL courante
   const getActiveGroup = () => {
     for (const g of menuGroups) {
       if (
@@ -186,7 +208,9 @@ export default function Sidebar() {
           user-select: none;
           position: relative;
         }
-        .sidebar-group-btn:hover { background: rgba(255,255,255,0.05) !important; }
+        .sidebar-group-btn:hover {
+          background: rgba(255,255,255,0.05) !important;
+        }
         .sidebar-group-btn.open {
           background: rgba(201,169,110,0.08) !important;
           color: var(--gold) !important;
@@ -198,7 +222,7 @@ export default function Sidebar() {
           border-radius: 8px;
           color: rgba(255,255,255,0.38);
           transition: all 0.2s ease;
-          display: flex; align-items: center; justify-content: space-between; gap: 8px;
+          display: flex; align-items: center; gap: 8px;
           position: relative; overflow: hidden;
         }
         .sub-link::before {
@@ -220,7 +244,6 @@ export default function Sidebar() {
           background: rgba(201,169,110,0.12) !important;
           font-weight: 600 !important;
           padding-left: 18px !important;
-          display: flex; align-items: center; justify-content: space-between;
         }
         .sub-active::before { height: 60% !important; }
         .logout-btn {
@@ -244,7 +267,6 @@ export default function Sidebar() {
           background: rgba(192,57,43,0.08) !important;
         }
         .nav-scroll::-webkit-scrollbar { width: 0; }
-        .notif-item:hover { background: rgba(201,169,110,0.03) !important; }
       `}</style>
 
       <div
@@ -271,6 +293,7 @@ export default function Sidebar() {
             position: "relative",
           }}
         >
+          {/* Ligne dorée décorative */}
           <div
             style={{
               position: "absolute",
@@ -421,13 +444,12 @@ export default function Sidebar() {
             )}
           </button>
 
-          {/* Panneau notifications */}
           {showNotifs && (
             <div
               style={{
                 position: "fixed",
                 left: "268px",
-                top: "160px",
+                top: "80px",
                 width: "340px",
                 background: "#fff",
                 borderRadius: "16px",
@@ -476,7 +498,6 @@ export default function Sidebar() {
                 {notifs.map((n) => (
                   <div
                     key={n.id}
-                    className="notif-item"
                     onClick={() => markRead(n.id)}
                     style={{
                       padding: "12px 18px",
@@ -572,6 +593,7 @@ export default function Sidebar() {
                 opacity: mounted ? 1 : 0,
               }}
             >
+              {/* Groupe header */}
               <div
                 onClick={() => setOpenSub(openSub === group.id ? "" : group.id)}
                 className={`sidebar-group-btn ${
@@ -610,6 +632,7 @@ export default function Sidebar() {
                 </span>
               </div>
 
+              {/* Sous-items */}
               {openSub === group.id && (
                 <div
                   style={{
@@ -630,6 +653,11 @@ export default function Sidebar() {
                       className={({ isActive }) =>
                         isActive ? "sub-active" : "sub-link"
                       }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
                     >
                       <span>{sub.label}</span>
                       {sub.badge && (

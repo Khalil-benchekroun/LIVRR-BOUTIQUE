@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../App";
 
 const PLANS = [
   {
@@ -658,6 +659,7 @@ function SubscriptionSection() {
 
 export default function Settings() {
   const { boutique } = useAuth();
+  const { dark, toggle: toggleDark } = useTheme();
 
   // --- ÉTATS ---
   const [boutiqueStatut, setBoutiqueStatut] = useState("ouvert"); // "ouvert" | "indisponible" | "ferme"
@@ -1073,6 +1075,70 @@ export default function Settings() {
           </div>
 
           {/* SECTION ABONNEMENT - placeholder retiré de la colonne */}
+
+          {/* APPARENCE */}
+          <div className="card">
+            <h3
+              style={{
+                marginBottom: "20px",
+                fontFamily: "var(--font-display)",
+                fontSize: "22px",
+              }}
+            >
+              Apparence
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 0",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    marginBottom: "3px",
+                  }}
+                >
+                  Mode sombre
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+                  Interface sombre, idéale en environnement tamisé
+                </div>
+              </div>
+              <button
+                onClick={toggleDark}
+                style={{
+                  width: "44px",
+                  height: "24px",
+                  borderRadius: "12px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: dark ? "var(--gold)" : "#E5E7EB",
+                  position: "relative",
+                  transition: "background 0.3s",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    borderRadius: "50%",
+                    background: "#fff",
+                    position: "absolute",
+                    top: "3px",
+                    left: dark ? "23px" : "3px",
+                    transition: "left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
