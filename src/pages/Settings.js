@@ -660,7 +660,7 @@ export default function Settings() {
   const { boutique } = useAuth();
 
   // --- ÉTATS ---
-  const [isPaused, setIsPaused] = useState(false);
+  const [boutiqueStatut, setBoutiqueStatut] = useState("ouvert"); // "ouvert" | "indisponible" | "ferme"
   const [hours, setHours] = useState({
     lun: "10:00 - 19:00",
     sam: "10:00 - 20:00",
@@ -672,16 +672,52 @@ export default function Settings() {
     payment: true,
   });
 
-  // --- ACTIONS ---
-  const togglePause = () => {
-    setIsPaused(!isPaused);
-    if (!isPaused) {
-      toast.error("Boutique en PAUSE. Invisible sur l'app client.", {
-        icon: "⏸️",
+  const STATUTS = [
+    {
+      key: "ouvert",
+      label: "Ouvert",
+      icon: "🟢",
+      desc: "Visible et disponible sur l'app client",
+      bg: "var(--success-bg)",
+      color: "var(--success)",
+      border: "var(--success)",
+    },
+    {
+      key: "indisponible",
+      label: "Momentanément indisponible",
+      icon: "🟡",
+      desc: "Visible mais nouvelles commandes suspendues",
+      bg: "var(--warning-bg)",
+      color: "var(--warning)",
+      border: "var(--warning)",
+    },
+    {
+      key: "ferme",
+      label: "Fermé",
+      icon: "🔴",
+      desc: "Invisible sur l'app client",
+      bg: "var(--error-bg)",
+      color: "var(--error)",
+      border: "var(--error)",
+    },
+  ];
+
+  const currentStatut = STATUTS.find((s) => s.key === boutiqueStatut);
+
+  const changeStatut = (key) => {
+    if (key === boutiqueStatut) return;
+    setBoutiqueStatut(key);
+    const s = STATUTS.find((s) => s.key === key);
+    if (key === "ouvert")
+      toast.success("Boutique EN LIGNE — Visible sur l'app client", {
+        icon: "🟢",
       });
-    } else {
-      toast.success("Boutique EN LIGNE. Prête à livrer !", { icon: "🚀" });
-    }
+    else if (key === "indisponible")
+      toast(`Boutique INDISPONIBLE — Commandes suspendues`, { icon: "🟡" });
+    else
+      toast.error("Boutique FERMÉE — Invisible sur l'app client", {
+        icon: "🔴",
+      });
   };
 
   const handleUpgrade = () => {
@@ -689,10 +725,7 @@ export default function Settings() {
     setTimeout(() => {
       toast.success(
         "Demande d'upgrade envoyée ! Un gestionnaire LIVRR vous contactera sous 24h.",
-        {
-          icon: "💎",
-          duration: 4000,
-        }
+        { icon: "💎", duration: 4000 }
       );
     }, 2000);
   };
@@ -702,47 +735,159 @@ export default function Settings() {
       className="page"
       style={{ maxWidth: "1200px", margin: "0 auto", paddingBottom: "100px" }}
     >
-      {/* HEADER SECTION */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "36px",
-              fontWeight: "400",
-            }}
-          >
-            Paramètres
-          </h1>
-          <p style={{ color: "var(--gray)", fontSize: "14px" }}>
-            Gérez votre boutique {boutique?.name} sur LIVRR
-          </p>
-        </div>
-
-        <button
-          onClick={togglePause}
+      {/* HEADER */}
+      <div style={{ marginBottom: "32px" }}>
+        <div
           style={{
-            padding: "12px 24px",
-            borderRadius: "12px",
-            border: "none",
-            fontWeight: "700",
-            fontSize: "13px",
-            cursor: "pointer",
-            transition: "0.3s",
-            background: isPaused ? "var(--error)" : "var(--noir)",
-            color: "#fff",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "20px",
           }}
         >
-          {isPaused ? "⏸️ REPRENDRE L'ACTIVITÉ" : "⚡ ACTIVER MODE RUSH"}
-        </button>
+          <div>
+            <h1
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "36px",
+                fontWeight: "400",
+              }}
+            >
+              Paramètres
+            </h1>
+            <p style={{ color: "var(--gray)", fontSize: "14px" }}>
+              Gérez votre boutique {boutique?.name} sur LIVRR
+            </p>
+          </div>
+          {/* Statut actuel badge */}
+          <div
+            style={{
+              padding: "10px 18px",
+              borderRadius: "30px",
+              background: currentStatut.bg,
+              border: `1.5px solid ${currentStatut.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>{currentStatut.icon}</span>
+            <span
+              style={{
+                fontWeight: "700",
+                fontSize: "13px",
+                color: currentStatut.color,
+              }}
+            >
+              {currentStatut.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Sélecteur de statut */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "12px",
+          }}
+        >
+          {STATUTS.map((s) => (
+            <div
+              key={s.key}
+              onClick={() => changeStatut(s.key)}
+              style={{
+                padding: "14px 16px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                border: `2px solid ${
+                  boutiqueStatut === s.key ? s.border : "rgba(0,0,0,0.07)"
+                }`,
+                background: boutiqueStatut === s.key ? s.bg : "#fff",
+                transition: "all 0.2s",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>{s.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "13px",
+                    color: boutiqueStatut === s.key ? s.color : "var(--noir)",
+                    marginBottom: "2px",
+                  }}
+                >
+                  {s.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--gray)",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {s.desc}
+                </div>
+              </div>
+              {boutiqueStatut === s.key && (
+                <div
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    borderRadius: "50%",
+                    background: s.color,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontSize: "10px",
+                      fontWeight: "800",
+                    }}
+                  >
+                    ✓
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Notification si indisponible ou fermé */}
+        {boutiqueStatut !== "ouvert" && (
+          <div
+            style={{
+              marginTop: "12px",
+              padding: "12px 16px",
+              borderRadius: "10px",
+              background: currentStatut.bg,
+              border: `1px solid ${currentStatut.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>⚠️</span>
+            <div
+              style={{
+                fontSize: "12px",
+                color: currentStatut.color,
+                fontWeight: "600",
+              }}
+            >
+              {boutiqueStatut === "indisponible"
+                ? "Votre boutique est visible mais n'accepte pas de nouvelles commandes. Les clients et LIVRR sont notifiés."
+                : "Votre boutique est invisible sur l'app client. Aucune commande ne peut être passée."}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* GRID LAYOUT PRINCIPAL */}
@@ -895,7 +1040,7 @@ export default function Settings() {
                     ? "Nouvelles commandes"
                     : k === "lowStock"
                     ? "Stock faible"
-                    : "Virements"}
+                    : "Paiements reçus"}
                 </span>
                 <button
                   onClick={() => setNotifs({ ...notifs, [k]: !v })}
@@ -928,6 +1073,89 @@ export default function Settings() {
           </div>
 
           {/* SECTION ABONNEMENT - placeholder retiré de la colonne */}
+        </div>
+      </div>
+
+      {/* PSP — délai de versement */}
+      <div style={{ marginTop: "24px" }}>
+        <div
+          style={{
+            background: "var(--noir)",
+            borderRadius: "16px",
+            padding: "20px 24px",
+            border: "1px solid rgba(201,169,110,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: "20px",
+          }}
+        >
+          <div style={{ fontSize: "28px", flexShrink: 0 }}>🏦</div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--gold)",
+                marginBottom: "4px",
+              }}
+            >
+              Conformité PSP Européenne
+            </div>
+            <div
+              style={{
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: "600",
+                marginBottom: "4px",
+              }}
+            >
+              Délai de versement : 14 jours minimum
+            </div>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                fontSize: "12px",
+                lineHeight: 1.6,
+              }}
+            >
+              Conformément à la réglementation européenne sur les services de
+              paiement (DSP2), les fonds sont maintenus sur la plateforme LIVRR
+              pendant un minimum de 14 jours avant versement à la boutique.
+              Modes acceptés : Carte bancaire · Espèces.
+            </div>
+          </div>
+          <div
+            style={{
+              flexShrink: 0,
+              textAlign: "center",
+              padding: "12px 20px",
+              background: "rgba(201,169,110,0.1)",
+              borderRadius: "12px",
+              border: "1px solid rgba(201,169,110,0.2)",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "32px",
+                color: "var(--gold)",
+                lineHeight: 1,
+              }}
+            >
+              14
+            </div>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.5)",
+                marginTop: "4px",
+              }}
+            >
+              jours
+            </div>
+          </div>
         </div>
       </div>
 

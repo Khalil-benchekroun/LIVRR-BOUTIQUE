@@ -10,6 +10,8 @@ const INIT_CLIENTS = [
     total: 3920,
     lastOrder: "Aujourd'hui",
     loyal: true,
+    adresseLivraison: "42 Avenue Montaigne, 75008 Paris",
+    adresseFacturation: "42 Avenue Montaigne, 75008 Paris",
   },
   {
     _id: "c2",
@@ -20,6 +22,8 @@ const INIT_CLIENTS = [
     total: 2450,
     lastOrder: "Il y a 3 jours",
     loyal: true,
+    adresseLivraison: "18 Rue du Faubourg Saint-Honoré, 75008 Paris",
+    adresseFacturation: "5 Boulevard Haussmann, 75009 Paris",
   },
   {
     _id: "c3",
@@ -30,6 +34,8 @@ const INIT_CLIENTS = [
     total: 6780,
     lastOrder: "Il y a 1 semaine",
     loyal: true,
+    adresseLivraison: "12 Place Vendôme, 75001 Paris",
+    adresseFacturation: "12 Place Vendôme, 75001 Paris",
   },
   {
     _id: "c4",
@@ -40,6 +46,8 @@ const INIT_CLIENTS = [
     total: 890,
     lastOrder: "Il y a 2 semaines",
     loyal: false,
+    adresseLivraison: "",
+    adresseFacturation: "",
   },
   {
     _id: "c5",
@@ -50,6 +58,8 @@ const INIT_CLIENTS = [
     total: 650,
     lastOrder: "Il y a 1 mois",
     loyal: false,
+    adresseLivraison: "",
+    adresseFacturation: "",
   },
 ];
 
@@ -69,10 +79,13 @@ function parseCSV(text) {
     headers.forEach((h, idx) => {
       obj[h] = vals[idx] || "";
     });
-    const name = obj["nom"] || obj["name"] || obj["prénom"] || "";
+    const name = obj["nom"] || obj["name"] || "";
     const email = obj["email"] || obj["e-mail"] || "";
-    const phone =
-      obj["téléphone"] || obj["telephone"] || obj["phone"] || obj["tel"] || "";
+    const phone = obj["téléphone"] || obj["telephone"] || obj["phone"] || "";
+    const adresseLivraison =
+      obj["adresse livraison"] || obj["livraison"] || obj["adresse"] || "";
+    const adresseFacturation =
+      obj["adresse facturation"] || obj["facturation"] || adresseLivraison;
     if (!name || !email) {
       errors.push(`Ligne ${i + 2} ignorée : nom ou email manquant`);
       return;
@@ -86,6 +99,8 @@ function parseCSV(text) {
       name,
       email,
       phone,
+      adresseLivraison,
+      adresseFacturation,
       orders: 0,
       total: 0,
       lastOrder: "Jamais commandé",
@@ -96,19 +111,25 @@ function parseCSV(text) {
   return { clients, errors };
 }
 
+const EMPTY_CLIENT = {
+  name: "",
+  email: "",
+  phone: "",
+  adresseLivraison: "",
+  adresseFacturation: "",
+  memeAdresse: true,
+};
+
 export default function Clients() {
   const [clients, setClients] = useState(INIT_CLIENTS);
   const [search, setSearch] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showDetail, setShowDetail] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importing, setImporting] = useState(false);
-  const [newClient, setNewClient] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [newClient, setNewClient] = useState(EMPTY_CLIENT);
   const fileRef = useRef();
 
   const filtered = clients.filter(
@@ -153,24 +174,62 @@ export default function Clients() {
 
   const addManual = () => {
     if (!newClient.name || !newClient.email) return;
+    const adresseFacturation = newClient.memeAdresse
+      ? newClient.adresseLivraison
+      : newClient.adresseFacturation;
     setClients((prev) => [
       ...prev,
       {
         _id: `manual_${Date.now()}`,
         ...newClient,
+        adresseFacturation,
         orders: 0,
         total: 0,
         lastOrder: "Jamais commandé",
         loyal: false,
       },
     ]);
-    setNewClient({ name: "", email: "", phone: "" });
+    setNewClient(EMPTY_CLIENT);
     setShowAdd(false);
+  };
+
+  // Export CSV
+  const exportCSV = () => {
+    const headers = [
+      "nom",
+      "email",
+      "téléphone",
+      "adresse livraison",
+      "adresse facturation",
+      "commandes",
+      "total dépensé",
+      "dernière commande",
+      "fidèle",
+    ];
+    const rows = clients.map((c) => [
+      c.name,
+      c.email,
+      c.phone || "",
+      c.adresseLivraison || "",
+      c.adresseFacturation || "",
+      c.orders,
+      c.total,
+      c.lastOrder,
+      c.loyal ? "Oui" : "Non",
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${v}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `clients_livrr_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
   };
 
   const downloadTemplate = () => {
     const csv =
-      "nom,email,téléphone\nSophie Martin,sophie@email.com,+33 6 12 34 56 78\nCamille Dupont,camille@email.com,+33 6 98 76 54 32";
+      "nom,email,téléphone,adresse livraison,adresse facturation\nSophie Martin,sophie@email.com,+33 6 12 34 56 78,42 Avenue Montaigne 75008 Paris,42 Avenue Montaigne 75008 Paris";
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -180,7 +239,7 @@ export default function Clients() {
 
   return (
     <div className="page">
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -218,6 +277,9 @@ export default function Clients() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
+          <button className="btn-outline" onClick={exportCSV}>
+            ↓ Exporter
+          </button>
           <button
             className="btn-outline"
             onClick={() => {
@@ -225,7 +287,7 @@ export default function Clients() {
               setShowImport(false);
             }}
           >
-            + Ajouter un client
+            + Ajouter
           </button>
           <button
             className="btn-gold"
@@ -235,12 +297,12 @@ export default function Clients() {
               setImportResult(null);
             }}
           >
-            ↑ Importer une liste
+            ↑ Importer
           </button>
         </div>
       </div>
 
-      {/* ── STATS ── */}
+      {/* STATS */}
       <div
         style={{
           display: "grid",
@@ -286,7 +348,7 @@ export default function Clients() {
         ))}
       </div>
 
-      {/* ── PANEL AJOUT MANUEL ── */}
+      {/* PANEL AJOUT */}
       {showAdd && (
         <div
           className="card"
@@ -372,6 +434,84 @@ export default function Clients() {
               />
             </div>
           </div>
+
+          {/* Adresses */}
+          <div style={{ marginBottom: "16px" }}>
+            <label className="label">Adresse de livraison</label>
+            <input
+              className="input-field"
+              placeholder="42 Avenue Montaigne, 75008 Paris"
+              value={newClient.adresseLivraison}
+              onChange={(e) =>
+                setNewClient({ ...newClient, adresseLivraison: e.target.value })
+              }
+              style={{ marginBottom: "10px" }}
+            />
+
+            {/* Toggle même adresse */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "10px",
+                cursor: "pointer",
+              }}
+              onClick={() =>
+                setNewClient((n) => ({ ...n, memeAdresse: !n.memeAdresse }))
+              }
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "20px",
+                  borderRadius: "10px",
+                  background: newClient.memeAdresse
+                    ? "var(--success)"
+                    : "#E5E7EB",
+                  position: "relative",
+                  transition: "0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    background: "#fff",
+                    position: "absolute",
+                    top: "3px",
+                    left: newClient.memeAdresse ? "19px" : "3px",
+                    transition: "0.2s",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: "13px", color: "var(--gray)" }}>
+                Adresse de facturation identique à la livraison
+              </span>
+            </div>
+
+            {!newClient.memeAdresse && (
+              <>
+                <label className="label">Adresse de facturation</label>
+                <input
+                  className="input-field"
+                  placeholder="5 Boulevard Haussmann, 75009 Paris"
+                  value={newClient.adresseFacturation}
+                  onChange={(e) =>
+                    setNewClient({
+                      ...newClient,
+                      adresseFacturation: e.target.value,
+                    })
+                  }
+                  style={{ marginBottom: 0 }}
+                />
+              </>
+            )}
+          </div>
+
           <div style={{ display: "flex", gap: "10px" }}>
             <button
               className="btn-gold"
@@ -387,7 +527,7 @@ export default function Clients() {
         </div>
       )}
 
-      {/* ── PANEL IMPORT ── */}
+      {/* PANEL IMPORT */}
       {showImport && (
         <div
           className="card"
@@ -444,7 +584,6 @@ export default function Clients() {
               ✕
             </button>
           </div>
-
           {!importResult ? (
             <>
               <div
@@ -548,7 +687,8 @@ export default function Clients() {
                     Format attendu
                   </div>
                   <code style={{ fontSize: "12px", color: "var(--gray)" }}>
-                    nom, email, téléphone
+                    nom, email, téléphone, adresse livraison, adresse
+                    facturation
                   </code>
                 </div>
                 <button
@@ -556,7 +696,7 @@ export default function Clients() {
                   style={{ fontSize: "12px", padding: "8px 14px" }}
                   onClick={downloadTemplate}
                 >
-                  ↓ Télécharger le modèle
+                  ↓ Modèle
                 </button>
               </div>
             </>
@@ -588,7 +728,9 @@ export default function Clients() {
                         <tr>
                           <th>Nom</th>
                           <th>Email</th>
-                          <th>Téléphone</th>
+                          <th>Tél.</th>
+                          <th>Livraison</th>
+                          <th>Facturation</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -604,6 +746,16 @@ export default function Clients() {
                               style={{ color: "var(--gray)", fontSize: "13px" }}
                             >
                               {c.phone || "—"}
+                            </td>
+                            <td
+                              style={{ color: "var(--gray)", fontSize: "12px" }}
+                            >
+                              {c.adresseLivraison || "—"}
+                            </td>
+                            <td
+                              style={{ color: "var(--gray)", fontSize: "12px" }}
+                            >
+                              {c.adresseFacturation || "—"}
                             </td>
                           </tr>
                         ))}
@@ -695,7 +847,7 @@ export default function Clients() {
         </div>
       )}
 
-      {/* ── TABLE ── */}
+      {/* TABLE */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div
           style={{
@@ -723,15 +875,20 @@ export default function Clients() {
               <th>Client</th>
               <th>Email</th>
               <th>Téléphone</th>
+              <th>Adresse livraison</th>
+              <th>Adresse facturation</th>
               <th>Commandes</th>
-              <th>Total dépensé</th>
-              <th>Dernière commande</th>
+              <th>Total</th>
               <th>Profil</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((c) => (
-              <tr key={c._id}>
+              <tr
+                key={c._id}
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowDetail(c)}
+              >
                 <td>
                   <div
                     style={{
@@ -786,12 +943,53 @@ export default function Clients() {
                 <td style={{ color: "var(--gray)", fontSize: "13px" }}>
                   {c.phone || "—"}
                 </td>
+                <td
+                  style={{
+                    color: "var(--gray)",
+                    fontSize: "12px",
+                    maxWidth: "160px",
+                  }}
+                >
+                  {c.adresseLivraison ? (
+                    <span title={c.adresseLivraison}>
+                      📦{" "}
+                      {c.adresseLivraison.length > 25
+                        ? c.adresseLivraison.slice(0, 25) + "…"
+                        : c.adresseLivraison}
+                    </span>
+                  ) : (
+                    <span style={{ opacity: 0.4 }}>—</span>
+                  )}
+                </td>
+                <td
+                  style={{
+                    color: "var(--gray)",
+                    fontSize: "12px",
+                    maxWidth: "160px",
+                  }}
+                >
+                  {c.adresseFacturation ? (
+                    c.adresseFacturation === c.adresseLivraison ? (
+                      <span
+                        style={{ color: "var(--gray-light)", fontSize: "11px" }}
+                      >
+                        = Livraison
+                      </span>
+                    ) : (
+                      <span title={c.adresseFacturation}>
+                        🧾{" "}
+                        {c.adresseFacturation.length > 25
+                          ? c.adresseFacturation.slice(0, 25) + "…"
+                          : c.adresseFacturation}
+                      </span>
+                    )
+                  ) : (
+                    <span style={{ opacity: 0.4 }}>—</span>
+                  )}
+                </td>
                 <td style={{ fontWeight: "500" }}>{c.orders}</td>
                 <td style={{ fontWeight: "600" }}>
                   {c.total > 0 ? "€" + c.total.toLocaleString("fr-FR") : "—"}
-                </td>
-                <td style={{ color: "var(--gray)", fontSize: "13px" }}>
-                  {c.lastOrder}
                 </td>
                 <td>
                   <span
@@ -805,7 +1003,7 @@ export default function Clients() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   style={{
                     textAlign: "center",
                     padding: "32px",
@@ -819,6 +1017,225 @@ export default function Clients() {
           </tbody>
         </table>
       </div>
+
+      {/* MODAL DETAIL CLIENT */}
+      {showDetail && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowDetail(null)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "500px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  background: "var(--gold-light)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "18px",
+                  color: "var(--gold-dark)",
+                  flexShrink: 0,
+                }}
+              >
+                {showDetail.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </div>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "24px",
+                    fontWeight: "400",
+                  }}
+                >
+                  {showDetail.name}
+                </h3>
+                <div style={{ fontSize: "13px", color: "var(--gray)" }}>
+                  {showDetail.email} · {showDetail.phone || "—"}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+                marginBottom: "20px",
+              }}
+            >
+              {[
+                { label: "Commandes", value: showDetail.orders },
+                {
+                  label: "Total dépensé",
+                  value:
+                    showDetail.total > 0
+                      ? "€" + showDetail.total.toLocaleString("fr-FR")
+                      : "—",
+                },
+                { label: "Dernière commande", value: showDetail.lastOrder },
+                {
+                  label: "Profil",
+                  value: showDetail.loyal ? "⭐ Fidèle" : "Nouveau",
+                },
+              ].map((info) => (
+                <div
+                  key={info.label}
+                  style={{
+                    background: "#F8F7F4",
+                    borderRadius: "10px",
+                    padding: "12px 14px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--gray)",
+                      textTransform: "uppercase",
+                      fontWeight: "700",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {info.label}
+                  </div>
+                  <div style={{ fontWeight: "700", fontSize: "15px" }}>
+                    {info.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Adresses */}
+            <div style={{ marginBottom: "20px" }}>
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: "800",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.07em",
+                  color: "var(--gray)",
+                  marginBottom: "12px",
+                }}
+              >
+                Adresses
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "rgba(201,169,110,0.06)",
+                    border: "1px solid rgba(201,169,110,0.2)",
+                    borderRadius: "12px",
+                    padding: "14px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "var(--gold-dark)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    📦 LIVRAISON
+                  </div>
+                  <div style={{ fontSize: "13px", lineHeight: 1.5 }}>
+                    {showDetail.adresseLivraison || (
+                      <span style={{ color: "var(--gray)" }}>
+                        Non renseignée
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.02)",
+                    border: "1px solid rgba(0,0,0,0.07)",
+                    borderRadius: "12px",
+                    padding: "14px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "var(--gray)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    🧾 FACTURATION
+                  </div>
+                  <div style={{ fontSize: "13px", lineHeight: 1.5 }}>
+                    {showDetail.adresseFacturation ? (
+                      showDetail.adresseFacturation ===
+                      showDetail.adresseLivraison ? (
+                        <span
+                          style={{ color: "var(--gray)", fontStyle: "italic" }}
+                        >
+                          Identique à la livraison
+                        </span>
+                      ) : (
+                        showDetail.adresseFacturation
+                      )
+                    ) : (
+                      <span style={{ color: "var(--gray)" }}>
+                        Non renseignée
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="btn-outline"
+              style={{ width: "100%" }}
+              onClick={() => setShowDetail(null)}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -60,6 +60,12 @@ const menuGroups = [
     ],
   },
   {
+    id: "finance",
+    label: "FINANCE",
+    icon: "💰",
+    subItems: [{ path: "/finance", label: "Reporting & Documents" }],
+  },
+  {
     id: "settings",
     label: "PARAMÈTRES",
     icon: "⚙️",

@@ -53,9 +53,9 @@ const PRODUCTS_DB = [
 ];
 
 const STAFF = [
-  { id: 1, name: "Siham B.", role: "Manager", status: "En poste" },
-  { id: 2, name: "Youssef L.", role: "Vendeur Senior", status: "En poste" },
-  { id: 3, name: "Amine R.", role: "Vendeur Junior", status: "Repos" },
+  { id: 1, name: "Siham B.", role: "Manager" },
+  { id: 2, name: "Youssef L.", role: "Vendeur Senior" },
+  { id: 3, name: "Amine R.", role: "Vendeur Junior" },
 ];
 
 const EMPTY = { name: "", email: "", phone: "", address: "", city: "" };
@@ -554,7 +554,7 @@ export default function POS() {
                   {STAFF.map((m) => (
                     <div
                       key={m.id}
-                      onClick={() => m.status === "En poste" && setVendor(m)}
+                      onClick={() => setVendor(m)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -570,9 +570,7 @@ export default function POS() {
                           vendor?.id === m.id
                             ? "rgba(201,169,110,0.06)"
                             : "#FAFAF8",
-                        cursor:
-                          m.status === "En poste" ? "pointer" : "not-allowed",
-                        opacity: m.status === "Repos" ? 0.4 : 1,
+                        cursor: "pointer",
                         transition: "var(--transition)",
                       }}
                     >
@@ -604,18 +602,6 @@ export default function POS() {
                           {m.role}
                         </div>
                       </div>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: "600",
-                          color:
-                            m.status === "En poste"
-                              ? "var(--success)"
-                              : "var(--gray)",
-                        }}
-                      >
-                        ● {m.status}
-                      </span>
                       {vendor?.id === m.id && (
                         <span
                           style={{ color: "var(--gold)", fontWeight: "800" }}
@@ -750,7 +736,6 @@ export default function POS() {
                   {[
                     { key: "card", icon: "💳", label: "Carte" },
                     { key: "cash", icon: "💵", label: "Espèces" },
-                    { key: "transfer", icon: "🏦", label: "Virement" },
                   ].map((m) => (
                     <div
                       key={m.key}

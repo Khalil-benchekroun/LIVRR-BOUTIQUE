@@ -41,21 +41,9 @@ const INITIAL_ORDERS = [
 ];
 
 const INITIAL_STAFF = [
-  { id: 1, name: "Siham B.", role: "Manager", status: "En poste", sales: 45 },
-  {
-    id: 2,
-    name: "Youssef L.",
-    role: "Vendeur Senior",
-    status: "En poste",
-    sales: 32,
-  },
-  {
-    id: 3,
-    name: "Amine R.",
-    role: "Vendeur Junior",
-    status: "Repos",
-    sales: 12,
-  },
+  { id: 1, name: "Siham B.", role: "Manager", sales: 45 },
+  { id: 2, name: "Youssef L.", role: "Vendeur Senior", sales: 32 },
+  { id: 3, name: "Amine R.", role: "Vendeur Junior", sales: 12 },
 ];
 
 const STATUS_CONFIG = {
@@ -129,6 +117,86 @@ export default function Orders() {
     );
     if (newStatus === "ready")
       toast.success("Colis prêt ! Signal envoyé au coursier LIVRR.");
+  };
+
+  const printLabel = (order) => {
+    // Génère un QR code via API publique qrserver.com
+    const qrData = encodeURIComponent(`https://livrr.fr/track/${order.id}`);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`;
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html><html><head><title>LIVRR — Étiquette #${
+      order.id
+    }</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Helvetica, sans-serif; padding: 0; background: #fff; }
+      @media print { body { width: 100mm; } }
+      .label {
+        width: 100mm; padding: 16px; border: 2px solid #000;
+        display: flex; flex-direction: column; gap: 10px;
+      }
+      .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+      .logo { font-size: 22px; font-weight: 900; letter-spacing: 4px; }
+      .order-id { font-size: 13px; font-weight: 700; color: #555; }
+      .qr-section { display: flex; gap: 12px; align-items: flex-start; }
+      .qr-img { width: 90px; height: 90px; flex-shrink: 0; }
+      .info { flex: 1; font-size: 11px; line-height: 1.7; }
+      .info strong { font-size: 12px; }
+      .track-label { text-align: center; font-size: 9px; color: #888; margin-top: 2px; }
+      .items { border-top: 1px dashed #ccc; padding-top: 8px; font-size: 11px; }
+      .item { display: flex; justify-content: space-between; padding: 2px 0; }
+      .footer { border-top: 1px dashed #ccc; padding-top: 8px; text-align: center; font-size: 9px; color: #aaa; }
+      .total { font-size: 13px; font-weight: 700; text-align: right; }
+      .marketing { background: #0a0a0f; color: #fff; text-align: center; padding: 8px; font-size: 9px; letter-spacing: 1px; margin-top: 4px; }
+      .marketing span { color: #c9a96e; font-weight: 700; }
+    </style>
+    </head><body>
+    <div class="label">
+      <div class="header">
+        <div class="logo">LIVRR</div>
+        <div class="order-id">#${order.id}</div>
+      </div>
+
+      <div class="qr-section">
+        <div>
+          <img class="qr-img" src="${qrUrl}" alt="QR Code suivi" />
+          <div class="track-label">📱 Scannez pour suivre</div>
+        </div>
+        <div class="info">
+          <strong>${order.customer}</strong><br/>
+          ${order.address}<br/><br/>
+          <strong>Livraison :</strong><br/>
+          ${order.deliverySlot}<br/><br/>
+          ${
+            order.assignedVendor
+              ? `<strong>Vendeur :</strong> ${order.assignedVendor}`
+              : ""
+          }
+        </div>
+      </div>
+
+      <div class="items">
+        ${order.items
+          .map(
+            (i) => `
+          <div class="item">
+            <span>${i.name} — ${i.size}</span>
+            <span>x${i.qty}</span>
+          </div>
+        `
+          )
+          .join("")}
+        <div class="total">TOTAL : €${order.total}</div>
+      </div>
+
+      <div class="marketing">
+        Livré par <span>LIVRR</span> · Luxe en moins d'1 heure · livrr.fr
+      </div>
+
+      <div class="footer">QR Code de suivi client · Ne pas retirer de l'emballage</div>
+    </div>
+    <script>window.onload=function(){window.print();}</script>
+    </body></html>`);
   };
 
   const printOrder = (order) => {
@@ -570,6 +638,7 @@ export default function Orders() {
                             display: "flex",
                             alignItems: "center",
                             gap: "4px",
+                            justifyContent: "flex-end",
                           }}
                         >
                           <span
@@ -581,17 +650,37 @@ export default function Orders() {
                               display: "inline-block",
                             }}
                           />
-                          Prête
+                          Prête — Coursier notifié
                         </div>
-                        <div
+                        <button
+                          onClick={() => printLabel(order)}
                           style={{
-                            fontSize: "11px",
-                            color: "var(--gray-light)",
-                            marginTop: "3px",
+                            marginTop: "8px",
+                            padding: "7px 14px",
+                            borderRadius: "8px",
+                            border: "1.5px solid var(--gold)",
+                            background: "rgba(201,169,110,0.06)",
+                            color: "var(--gold-dark)",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-body)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            transition: "var(--transition)",
                           }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              "rgba(201,169,110,0.15)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background =
+                              "rgba(201,169,110,0.06)")
+                          }
                         >
-                          Coursier notifié
-                        </div>
+                          📦 Imprimer l'étiquette QR
+                        </button>
                       </div>
                     )}
                   </div>
@@ -687,11 +776,8 @@ export default function Orders() {
                     key={member.id}
                     className={`vendor-card ${
                       selectedVendorId === member.id ? "selected" : ""
-                    } ${member.status === "Repos" ? "disabled" : ""}`}
-                    onClick={() =>
-                      member.status !== "Repos" &&
-                      setSelectedVendorId(member.id)
-                    }
+                    }`}
+                    onClick={() => setSelectedVendorId(member.id)}
                     style={{
                       animation: `fadeUp 0.3s ${i * 0.06}s ease both`,
                       opacity: 0,
@@ -747,18 +833,6 @@ export default function Orders() {
                         gap: "4px",
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: "600",
-                          color:
-                            member.status === "En poste"
-                              ? "var(--success)"
-                              : "var(--gray)",
-                        }}
-                      >
-                        ● {member.status}
-                      </span>
                       {selectedVendorId === member.id && (
                         <span
                           style={{

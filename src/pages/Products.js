@@ -72,15 +72,51 @@ export default function Products() {
     setShowModal(true);
   };
 
-  // --- GESTION DE L'IMAGE ---
+  // --- GESTION DE L'IMAGE + MODÉRATION IA ---
+  const [moderating, setModerating] = useState(false);
+  const [moderationResult, setModerationResult] = useState(null); // null | "approved" | "rejected"
+
+  const BLOCKED_KEYWORDS = [
+    "nude",
+    "naked",
+    "explicit",
+    "drug",
+    "weapon",
+    "violence",
+    "xxx",
+  ];
+
+  const moderateImage = (file, dataUrl) => {
+    setModerating(true);
+    setModerationResult(null);
+    // Simulation modération IA (en prod : appel API Google Vision / AWS Rekognition)
+    setTimeout(() => {
+      const fileName = file.name.toLowerCase();
+      const isBlocked = BLOCKED_KEYWORDS.some((k) => fileName.includes(k));
+      if (isBlocked) {
+        setModerationResult("rejected");
+        setModerating(false);
+        toast.error(
+          "⚠️ Image refusée : contenu potentiellement inapproprié détecté par le filtre IA.",
+          { duration: 5000 }
+        );
+      } else {
+        setForm((prev) => ({ ...prev, image: dataUrl }));
+        setModerationResult("approved");
+        setModerating(false);
+        toast.success("✓ Image validée par le filtre IA LIVRR", {
+          duration: 2000,
+        });
+      }
+    }, 1800); // simule le temps d'analyse IA
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () =>
-        setForm((prev) => ({ ...prev, image: reader.result }));
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => moderateImage(file, reader.result);
+    reader.readAsDataURL(file);
   };
 
   // --- SAUVEGARDE (CREATE & UPDATE) ---
@@ -409,45 +445,153 @@ export default function Products() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "20px" }}
             >
-              {/* ZONE IMAGE */}
+              {/* ZONE IMAGE + MODÉRATION IA */}
               <div
                 style={{
-                  padding: "24px",
+                  padding: "20px",
                   background: "#F8FAFC",
                   borderRadius: "16px",
-                  border: "2px dashed #E2E8F0",
+                  border: `2px dashed ${
+                    moderationResult === "rejected"
+                      ? "var(--error)"
+                      : moderationResult === "approved"
+                      ? "var(--success)"
+                      : "#E2E8F0"
+                  }`,
                   textAlign: "center",
+                  transition: "border-color 0.3s",
                 }}
               >
-                {form.image && (
-                  <img
-                    src={form.image}
-                    alt=""
-                    style={{
-                      width: "120px",
-                      height: "120px",
-                      objectFit: "cover",
-                      borderRadius: "12px",
-                      marginBottom: "15px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    }}
-                  />
+                {moderating ? (
+                  <div style={{ padding: "12px 0" }}>
+                    <div
+                      className="spinner"
+                      style={{ margin: "0 auto 12px" }}
+                    />
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "var(--gray)",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Analyse IA en cours…
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--gray-light)",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Vérification du contenu par le filtre LIVRR
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {form.image && moderationResult === "approved" && (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <img
+                          src={form.image}
+                          alt=""
+                          style={{
+                            width: "120px",
+                            height: "120px",
+                            objectFit: "cover",
+                            borderRadius: "12px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-8px",
+                            right: "-8px",
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "50%",
+                            background: "var(--success)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#fff",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                          }}
+                        >
+                          ✓
+                        </div>
+                      </div>
+                    )}
+                    {moderationResult === "rejected" && (
+                      <div
+                        style={{
+                          padding: "10px",
+                          background: "var(--error-bg)",
+                          borderRadius: "10px",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "var(--error)",
+                            fontWeight: "700",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          ⚠️ Image refusée
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--error)",
+                            opacity: 0.8,
+                          }}
+                        >
+                          Contenu inapproprié détecté. Veuillez choisir une
+                          autre image.
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--gray)",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {moderationResult === "approved"
+                        ? "✓ Image validée par le filtre IA LIVRR"
+                        : "Photo du produit (JPG, PNG) — Analysée par IA"}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{ fontSize: "12px" }}
+                    />
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        fontSize: "10px",
+                        color: "var(--gray-light)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      🤖 Filtrage automatique · Contenu inapproprié bloqué
+                    </div>
+                  </>
                 )}
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--gray)",
-                    marginBottom: "10px",
-                  }}
-                >
-                  Photo du produit (JPG, PNG)
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ fontSize: "12px" }}
-                />
               </div>
 
               <div>
