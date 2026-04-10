@@ -60,6 +60,15 @@ const menuGroups = [
     ],
   },
   {
+    id: "messages",
+    label: "MESSAGES & SUPPORT",
+    icon: "💬",
+    subItems: [
+      { path: "/messages", label: "Messages clients", badge: 1 },
+      { path: "/support", label: "Support LIVRR" },
+    ],
+  },
+  {
     id: "finance",
     label: "FINANCE",
     icon: "💰",
@@ -78,7 +87,53 @@ export default function Sidebar() {
   const location = useLocation();
   const storeName = "Sandro Paris";
 
-  // Détermine quel groupe est actif selon l'URL courante
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifs, setNotifs] = useState([
+    {
+      id: 1,
+      icon: "📦",
+      text: "Nouvelle commande #LV-00249 — Sophie M.",
+      time: "Il y a 2 min",
+      read: false,
+    },
+    {
+      id: 2,
+      icon: "⚠️",
+      text: "Stock faible : Robe Midi Fleurie (2 restants)",
+      time: "Il y a 15 min",
+      read: false,
+    },
+    {
+      id: 3,
+      icon: "💳",
+      text: "Versement de 1 284 € effectué sur votre compte",
+      time: "Il y a 1h",
+      read: false,
+    },
+    {
+      id: 4,
+      icon: "↩️",
+      text: "Demande de retour — Commande #LV-00220",
+      time: "Il y a 2h",
+      read: true,
+    },
+    {
+      id: 5,
+      icon: "⏳",
+      text: "Fonds disponibles : 712 € après délai PSP",
+      time: "Il y a 3h",
+      read: true,
+    },
+  ]);
+
+  const unreadCount = notifs.filter((n) => !n.read).length;
+  const markAllRead = () =>
+    setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markRead = (id) =>
+    setNotifs((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+
   const getActiveGroup = () => {
     for (const g of menuGroups) {
       if (
@@ -131,9 +186,7 @@ export default function Sidebar() {
           user-select: none;
           position: relative;
         }
-        .sidebar-group-btn:hover {
-          background: rgba(255,255,255,0.05) !important;
-        }
+        .sidebar-group-btn:hover { background: rgba(255,255,255,0.05) !important; }
         .sidebar-group-btn.open {
           background: rgba(201,169,110,0.08) !important;
           color: var(--gold) !important;
@@ -145,7 +198,7 @@ export default function Sidebar() {
           border-radius: 8px;
           color: rgba(255,255,255,0.38);
           transition: all 0.2s ease;
-          display: flex; align-items: center; gap: 8px;
+          display: flex; align-items: center; justify-content: space-between; gap: 8px;
           position: relative; overflow: hidden;
         }
         .sub-link::before {
@@ -167,6 +220,7 @@ export default function Sidebar() {
           background: rgba(201,169,110,0.12) !important;
           font-weight: 600 !important;
           padding-left: 18px !important;
+          display: flex; align-items: center; justify-content: space-between;
         }
         .sub-active::before { height: 60% !important; }
         .logout-btn {
@@ -190,6 +244,7 @@ export default function Sidebar() {
           background: rgba(192,57,43,0.08) !important;
         }
         .nav-scroll::-webkit-scrollbar { width: 0; }
+        .notif-item:hover { background: rgba(201,169,110,0.03) !important; }
       `}</style>
 
       <div
@@ -216,7 +271,6 @@ export default function Sidebar() {
             position: "relative",
           }}
         >
-          {/* Ligne dorée décorative */}
           <div
             style={{
               position: "absolute",
@@ -313,6 +367,195 @@ export default function Sidebar() {
           </div>
         </div>
 
+        {/* ── CLOCHE NOTIFICATIONS ── */}
+        <div
+          style={{
+            padding: "0 16px",
+            marginBottom: "8px",
+            position: "relative",
+          }}
+        >
+          <button
+            onClick={() => setShowNotifs(!showNotifs)}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "12px",
+              background: showNotifs
+                ? "rgba(201,169,110,0.12)"
+                : "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(201,169,110,0.15)",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              fontFamily: "var(--font-body)",
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>🔔</span>
+            <span
+              style={{
+                flex: 1,
+                textAlign: "left",
+                fontSize: "12px",
+                color: "rgba(255,255,255,0.75)",
+                fontWeight: "600",
+              }}
+            >
+              Notifications
+            </span>
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  background: "var(--error)",
+                  color: "#fff",
+                  borderRadius: "20px",
+                  padding: "2px 7px",
+                  fontSize: "10px",
+                  fontWeight: "800",
+                }}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Panneau notifications */}
+          {showNotifs && (
+            <div
+              style={{
+                position: "fixed",
+                left: "268px",
+                top: "160px",
+                width: "340px",
+                background: "#fff",
+                borderRadius: "16px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+                zIndex: 999,
+                border: "1px solid rgba(0,0,0,0.08)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  padding: "16px 18px",
+                  borderBottom: "1px solid rgba(0,0,0,0.07)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "14px",
+                    color: "var(--noir)",
+                  }}
+                >
+                  Notifications
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--gold)",
+                      fontWeight: "600",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                    }}
+                  >
+                    Tout marquer lu
+                  </button>
+                )}
+              </div>
+              <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+                {notifs.map((n) => (
+                  <div
+                    key={n.id}
+                    className="notif-item"
+                    onClick={() => markRead(n.id)}
+                    style={{
+                      padding: "12px 18px",
+                      borderBottom: "1px solid rgba(0,0,0,0.05)",
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                      background: n.read ? "#fff" : "rgba(201,169,110,0.04)",
+                      cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "18px",
+                        flexShrink: 0,
+                        marginTop: "1px",
+                      }}
+                    >
+                      {n.icon}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: n.read ? "400" : "600",
+                          color: "var(--noir)",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {n.text}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--gray)",
+                          marginTop: "3px",
+                        }}
+                      >
+                        {n.time}
+                      </div>
+                    </div>
+                    {!n.read && (
+                      <div
+                        style={{
+                          width: "7px",
+                          height: "7px",
+                          borderRadius: "50%",
+                          background: "var(--gold)",
+                          flexShrink: 0,
+                          marginTop: "5px",
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  padding: "10px 18px",
+                  borderTop: "1px solid rgba(0,0,0,0.07)",
+                  textAlign: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--gold)",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Voir toutes les notifications
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* ── NAVIGATION ── */}
         <nav
           className="nav-scroll"
@@ -329,7 +572,6 @@ export default function Sidebar() {
                 opacity: mounted ? 1 : 0,
               }}
             >
-              {/* Groupe header */}
               <div
                 onClick={() => setOpenSub(openSub === group.id ? "" : group.id)}
                 className={`sidebar-group-btn ${
@@ -368,7 +610,6 @@ export default function Sidebar() {
                 </span>
               </div>
 
-              {/* Sous-items */}
               {openSub === group.id && (
                 <div
                   style={{
@@ -390,7 +631,22 @@ export default function Sidebar() {
                         isActive ? "sub-active" : "sub-link"
                       }
                     >
-                      {sub.label}
+                      <span>{sub.label}</span>
+                      {sub.badge && (
+                        <span
+                          style={{
+                            background: "var(--gold)",
+                            color: "var(--noir)",
+                            borderRadius: "20px",
+                            padding: "1px 6px",
+                            fontSize: "9px",
+                            fontWeight: "800",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {sub.badge}
+                        </span>
+                      )}
                     </NavLink>
                   ))}
                 </div>

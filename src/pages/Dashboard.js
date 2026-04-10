@@ -50,12 +50,28 @@ const ALERTS = [
     text: "Stock faible : Robe Midi (2 restants)",
     color: "var(--warning-bg)",
     border: "var(--warning)",
+    link: "/produits",
   },
   {
     icon: "📦",
     text: "3 commandes en attente de préparation",
     color: "var(--info-bg)",
     border: "var(--info)",
+    link: "/commandes",
+  },
+  {
+    icon: "↩️",
+    text: "Nouvelle demande de retour — Commande #LV-00220",
+    color: "var(--error-bg)",
+    border: "var(--error)",
+    link: "/retours",
+  },
+  {
+    icon: "⏳",
+    text: "Fonds disponibles après délai PSP : 712 €",
+    color: "var(--gold-lighter)",
+    border: "var(--gold)",
+    link: "/finance",
   },
 ];
 
@@ -92,13 +108,11 @@ const STATS = [
 
 function AnimatedNumber({ target, suffix, duration = 1200 }) {
   const [display, setDisplay] = useState(0);
-
   useEffect(() => {
     const isFloat = !Number.isInteger(target);
     const steps = 40;
     const interval = duration / steps;
     let step = 0;
-
     const timer = setInterval(() => {
       step++;
       const progress = step / steps;
@@ -107,10 +121,8 @@ function AnimatedNumber({ target, suffix, duration = 1200 }) {
       setDisplay(isFloat ? current.toFixed(1) : Math.floor(current));
       if (step >= steps) clearInterval(timer);
     }, interval);
-
     return () => clearInterval(timer);
   }, [target, duration]);
-
   return (
     <span>
       {display}
@@ -169,7 +181,6 @@ export default function Dashboard() {
             day: "numeric",
           })}
         </p>
-        {/* Ligne décorative */}
         <div
           style={{
             marginTop: "20px",
@@ -191,8 +202,9 @@ export default function Dashboard() {
         }}
       >
         {ALERTS.map((a, i) => (
-          <div
+          <Link
             key={i}
+            to={a.link}
             style={{
               background: a.color,
               border: `1px solid ${a.border}22`,
@@ -204,12 +216,21 @@ export default function Dashboard() {
               alignItems: "center",
               fontSize: "14px",
               animation: `slideInRight 0.4s ease ${i * 0.1}s both`,
-              backdropFilter: "blur(4px)",
+              textDecoration: "none",
+              color: "var(--noir)",
+              transition: "opacity 0.2s",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             <span style={{ fontSize: "16px" }}>{a.icon}</span>
-            <span style={{ fontWeight: "500" }}>{a.text}</span>
-          </div>
+            <span style={{ fontWeight: "500", flex: 1 }}>{a.text}</span>
+            <span
+              style={{ fontSize: "12px", color: "var(--gray)", flexShrink: 0 }}
+            >
+              Voir →
+            </span>
+          </Link>
         ))}
       </div>
 
@@ -226,10 +247,7 @@ export default function Dashboard() {
           <div
             key={s.label}
             className="stat-card gold-top"
-            style={{
-              animationDelay: `${0.1 + i * 0.08}s`,
-              opacity: 0,
-            }}
+            style={{ animationDelay: `${0.1 + i * 0.08}s`, opacity: 0 }}
           >
             <div className="stat-label">{s.label}</div>
             <div className="stat-value" style={{ fontSize: "36px" }}>
@@ -522,12 +540,12 @@ export default function Dashboard() {
                     border: "1px solid var(--gold-light)",
                     transition: "all var(--transition)",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--gold-lighter)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "var(--gold-lighter)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   Gérer
                 </Link>

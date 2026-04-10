@@ -27,6 +27,7 @@ import Categories from "./pages/Categories";
 import QRCodePage from "./pages/QRCode";
 import Services from "./pages/Services";
 import Finance from "./pages/Finance";
+import Support from "./pages/Support";
 
 function PrivateRoute({ children }) {
   const { boutique, loading } = useAuth();
@@ -248,6 +249,16 @@ export default function App() {
               <PrivateRoute>
                 <AppLayout>
                   <Finance />
+                </AppLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <PrivateRoute>
+                <AppLayout>
+                  <Support />
                 </AppLayout>
               </PrivateRoute>
             }
