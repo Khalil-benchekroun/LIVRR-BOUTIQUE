@@ -5,6 +5,7 @@ const INITIAL_CATS = [
   { id: 1, name: "Vêtements", count: 45, icon: "👕", active: true },
   { id: 2, name: "Accessoires", count: 12, icon: "👜", active: true },
   { id: 3, name: "Chaussures", count: 8, icon: "👠", active: true },
+  { id: 4, name: "Beauté", count: 17, icon: "💄", active: true },
   { id: 4, name: "Épicerie Fine", count: 15, icon: "🍯", active: true },
   { id: 5, name: "Archives / Soldes", count: 22, icon: "🏷️", active: false },
 ];

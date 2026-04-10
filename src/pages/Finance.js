@@ -1,10 +1,24 @@
 import React, { useState } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 const TRANSACTIONS = [
   {
     id: "TRX-001",
     date: "2026-04-09",
     client: "Sophie Martin",
+    produit: "Robe Midi Fleurie",
+    categorie: "Vêtements",
     montant: 490,
     commission: 98,
     net: 392,
@@ -16,6 +30,8 @@ const TRANSACTIONS = [
     id: "TRX-002",
     date: "2026-04-08",
     client: "Camille Dupont",
+    produit: "Trench Camel",
+    categorie: "Vêtements",
     montant: 345,
     commission: 69,
     net: 276,
@@ -27,6 +43,8 @@ const TRANSACTIONS = [
     id: "TRX-003",
     date: "2026-04-07",
     client: "Marie Laurent",
+    produit: "Parfum Oud 50ml",
+    categorie: "Beauté",
     montant: 890,
     commission: 178,
     net: 712,
@@ -38,6 +56,8 @@ const TRANSACTIONS = [
     id: "TRX-004",
     date: "2026-04-05",
     client: "Julie Petit",
+    produit: "Sac Cuir Noir",
+    categorie: "Accessoires",
     montant: 980,
     commission: 196,
     net: 784,
@@ -49,6 +69,8 @@ const TRANSACTIONS = [
     id: "TRX-005",
     date: "2026-04-03",
     client: "Emma Bernard",
+    produit: "Sérum Éclat Visage",
+    categorie: "Beauté",
     montant: 650,
     commission: 130,
     net: 520,
@@ -60,6 +82,8 @@ const TRANSACTIONS = [
     id: "TRX-006",
     date: "2026-03-28",
     client: "Sophie Martin",
+    produit: "Blazer Structuré",
+    categorie: "Vêtements",
     montant: 1200,
     commission: 240,
     net: 960,
@@ -71,6 +95,8 @@ const TRANSACTIONS = [
     id: "TRX-007",
     date: "2026-03-25",
     client: "Camille Dupont",
+    produit: "Sneakers Cuir Blanc",
+    categorie: "Chaussures",
     montant: 295,
     commission: 59,
     net: 236,
@@ -82,6 +108,8 @@ const TRANSACTIONS = [
     id: "TRX-008",
     date: "2026-03-20",
     client: "Marie Laurent",
+    produit: "Robe Midi Fleurie",
+    categorie: "Vêtements",
     montant: 450,
     commission: 90,
     net: 360,
@@ -89,6 +117,110 @@ const TRANSACTIONS = [
     mode: "Carte",
     commande: "#LV-00220",
   },
+  {
+    id: "TRX-009",
+    date: "2026-03-15",
+    client: "Julie Petit",
+    produit: "Parfum Oud 50ml",
+    categorie: "Beauté",
+    montant: 280,
+    commission: 56,
+    net: 224,
+    statut: "versé",
+    mode: "Carte",
+    commande: "#LV-00215",
+  },
+  {
+    id: "TRX-010",
+    date: "2026-03-10",
+    client: "Emma Bernard",
+    produit: "Trench Camel",
+    categorie: "Vêtements",
+    montant: 890,
+    commission: 178,
+    net: 712,
+    statut: "versé",
+    mode: "Carte",
+    commande: "#LV-00210",
+  },
+  {
+    id: "TRX-011",
+    date: "2026-03-05",
+    client: "Sophie Martin",
+    produit: "Sac Cuir Noir",
+    categorie: "Accessoires",
+    montant: 1200,
+    commission: 240,
+    net: 960,
+    statut: "versé",
+    mode: "Espèces",
+    commande: "#LV-00205",
+  },
+  {
+    id: "TRX-012",
+    date: "2026-02-28",
+    client: "Camille Dupont",
+    produit: "Blazer Structuré",
+    categorie: "Vêtements",
+    montant: 295,
+    commission: 59,
+    net: 236,
+    statut: "versé",
+    mode: "Carte",
+    commande: "#LV-00198",
+  },
+  {
+    id: "TRX-013",
+    date: "2026-02-20",
+    client: "Marie Laurent",
+    produit: "Sérum Éclat Visage",
+    categorie: "Beauté",
+    montant: 185,
+    commission: 37,
+    net: 148,
+    statut: "versé",
+    mode: "Carte",
+    commande: "#LV-00190",
+  },
+  {
+    id: "TRX-014",
+    date: "2026-02-14",
+    client: "Julie Petit",
+    produit: "Robe Midi Fleurie",
+    categorie: "Vêtements",
+    montant: 490,
+    commission: 98,
+    net: 392,
+    statut: "versé",
+    mode: "Carte",
+    commande: "#LV-00185",
+  },
+  {
+    id: "TRX-015",
+    date: "2026-01-30",
+    client: "Emma Bernard",
+    produit: "Sneakers Cuir Blanc",
+    categorie: "Chaussures",
+    montant: 450,
+    commission: 90,
+    net: 360,
+    statut: "versé",
+    mode: "Espèces",
+    commande: "#LV-00170",
+  },
+];
+
+// Données graphique évolution CA (simulées par semaine)
+const EVOLUTION_DATA = [
+  { periode: "S1 Fév", ca: 2840, net: 2272 },
+  { periode: "S2 Fév", ca: 3120, net: 2496 },
+  { periode: "S3 Fév", ca: 1890, net: 1512 },
+  { periode: "S4 Fév", ca: 4200, net: 3360 },
+  { periode: "S1 Mar", ca: 3650, net: 2920 },
+  { periode: "S2 Mar", ca: 5100, net: 4080 },
+  { periode: "S3 Mar", ca: 2940, net: 2352 },
+  { periode: "S4 Mar", ca: 4800, net: 3840 },
+  { periode: "S1 Avr", ca: 2315, net: 1852 },
 ];
 
 const PERIODES = [
@@ -113,20 +245,70 @@ function filterByPeriode(transactions, periode) {
   return transactions.filter((t) => new Date(t.date) >= limit);
 }
 
+function filterPrevPeriode(transactions, periode) {
+  const now = new Date("2026-04-09");
+  const days = { "7j": 7, "30j": 30, "3m": 90, "6m": 180, "1an": 365 };
+  const d = days[periode] || 30;
+  const end = new Date(now);
+  end.setDate(end.getDate() - d);
+  const start = new Date(end);
+  start.setDate(start.getDate() - d);
+  return transactions.filter(
+    (t) => new Date(t.date) >= start && new Date(t.date) < end
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "12px",
+          color: "var(--gray)",
+          marginBottom: "6px",
+          fontWeight: "600",
+        }}
+      >
+        {label}
+      </div>
+      {payload.map((p) => (
+        <div
+          key={p.name}
+          style={{ fontSize: "13px", fontWeight: "700", color: p.color }}
+        >
+          {p.name === "ca" ? "CA Brut" : "Net boutique"} :{" "}
+          {p.value.toLocaleString("fr-FR")} €
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function Finance() {
   const [periode, setPeriode] = useState("30j");
-  const [activeTab, setActiveTab] = useState("apercu"); // apercu | transactions | documents
+  const [activeTab, setActiveTab] = useState("apercu");
 
   const filtered = filterByPeriode(TRANSACTIONS, periode);
+  const prevPeriod = filterPrevPeriode(TRANSACTIONS, periode);
 
-  const ca = filtered.reduce(
-    (s, t) => s + (t.statut !== "remboursé" ? t.montant : 0),
-    0
-  );
-  const commissions = filtered.reduce(
-    (s, t) => s + (t.statut !== "remboursé" ? t.commission : 0),
-    0
-  );
+  const ca = filtered
+    .filter((t) => t.statut !== "remboursé")
+    .reduce((s, t) => s + t.montant, 0);
+  const prevCa = prevPeriod
+    .filter((t) => t.statut !== "remboursé")
+    .reduce((s, t) => s + t.montant, 0);
+  const commissions = filtered
+    .filter((t) => t.statut !== "remboursé")
+    .reduce((s, t) => s + t.commission, 0);
   const netVerse = filtered
     .filter((t) => t.statut === "versé")
     .reduce((s, t) => s + t.net, 0);
@@ -137,11 +319,50 @@ export default function Finance() {
     .filter((t) => t.statut === "remboursé")
     .reduce((s, t) => s + t.montant, 0);
 
+  const evolution =
+    prevCa > 0 ? Math.round(((ca - prevCa) / prevCa) * 100) : null;
+
+  // Top produits par CA
+  const topProduits = Object.values(
+    filtered
+      .filter((t) => t.statut !== "remboursé")
+      .reduce((acc, t) => {
+        if (!acc[t.produit])
+          acc[t.produit] = {
+            produit: t.produit,
+            categorie: t.categorie,
+            ca: 0,
+            ventes: 0,
+          };
+        acc[t.produit].ca += t.montant;
+        acc[t.produit].ventes += 1;
+        return acc;
+      }, {})
+  )
+    .sort((a, b) => b.ca - a.ca)
+    .slice(0, 5);
+
+  // Top catégories
+  const topCats = Object.values(
+    filtered
+      .filter((t) => t.statut !== "remboursé")
+      .reduce((acc, t) => {
+        if (!acc[t.categorie])
+          acc[t.categorie] = { categorie: t.categorie, ca: 0 };
+        acc[t.categorie].ca += t.montant;
+        return acc;
+      }, {})
+  ).sort((a, b) => b.ca - a.ca);
+
+  const maxCat = topCats[0]?.ca || 1;
+
   const exportCSV = () => {
     const headers = [
       "ID",
       "Date",
       "Client",
+      "Produit",
+      "Catégorie",
       "Commande",
       "Montant",
       "Commission (20%)",
@@ -153,6 +374,8 @@ export default function Finance() {
       t.id,
       t.date,
       t.client,
+      t.produit,
+      t.categorie,
       t.commande,
       t.montant + "€",
       t.commission + "€",
@@ -210,7 +433,7 @@ export default function Finance() {
             Reporting comptable · Transactions · Documents
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "10px" }}>
           <button
             className="btn-outline"
             style={{ fontSize: "13px" }}
@@ -221,7 +444,7 @@ export default function Finance() {
           <button
             className="btn-gold"
             style={{ fontSize: "13px" }}
-            onClick={() => alert("Génération du rapport PDF en cours…")}
+            onClick={() => alert("Génération PDF en cours…")}
           >
             📄 Rapport PDF
           </button>
@@ -256,11 +479,11 @@ export default function Finance() {
         ))}
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
+          gridTemplateColumns: "repeat(5,1fr)",
           gap: "14px",
           marginBottom: "28px",
         }}
@@ -269,9 +492,13 @@ export default function Finance() {
           {
             label: "CA Brut",
             value: `${ca.toLocaleString("fr-FR")} €`,
-            sub: "Toutes transactions",
+            sub:
+              evolution !== null
+                ? `${evolution >= 0 ? "+" : ""}${evolution}% vs période préc.`
+                : "Toutes transactions",
             color: "var(--noir)",
             bg: "#fff",
+            trend: evolution,
           },
           {
             label: "Commission LIVRR",
@@ -279,6 +506,7 @@ export default function Finance() {
             sub: "20% sur les ventes",
             color: "var(--error)",
             bg: "var(--error-bg)",
+            trend: null,
           },
           {
             label: "Net boutique",
@@ -286,6 +514,7 @@ export default function Finance() {
             sub: "Après commission",
             color: "var(--success)",
             bg: "var(--success-bg)",
+            trend: null,
           },
           {
             label: "Versé",
@@ -293,6 +522,7 @@ export default function Finance() {
             sub: "Reçu sur compte",
             color: "var(--gold-dark)",
             bg: "var(--gold-lighter)",
+            trend: null,
           },
           {
             label: "En attente",
@@ -300,13 +530,10 @@ export default function Finance() {
             sub: "Délai PSP 14j",
             color: "var(--warning)",
             bg: "var(--warning-bg)",
+            trend: null,
           },
         ].map((s) => (
-          <div
-            key={s.label}
-            className="stat-card"
-            style={{ background: s.bg, border: `1px solid transparent` }}
-          >
+          <div key={s.label} className="stat-card" style={{ background: s.bg }}>
             <div className="stat-label">{s.label}</div>
             <div
               style={{
@@ -320,7 +547,20 @@ export default function Finance() {
             >
               {s.value}
             </div>
-            <div className="stat-sub">{s.sub}</div>
+            <div
+              style={{
+                fontSize: "11px",
+                color:
+                  s.trend !== null
+                    ? s.trend >= 0
+                      ? "var(--success)"
+                      : "var(--error)"
+                    : "var(--gray)",
+                fontWeight: s.trend !== null ? "700" : "400",
+              }}
+            >
+              {s.sub}
+            </div>
           </div>
         ))}
       </div>
@@ -332,11 +572,10 @@ export default function Finance() {
           gap: "6px",
           marginBottom: "20px",
           borderBottom: "1px solid rgba(0,0,0,0.07)",
-          paddingBottom: "0",
         }}
       >
         {[
-          { key: "apercu", label: "📊 Aperçu" },
+          { key: "apercu", label: "📊 Aperçu & Performances" },
           { key: "transactions", label: "💳 Transactions" },
           { key: "documents", label: "📄 Documents" },
         ].map((t) => (
@@ -361,184 +600,435 @@ export default function Finance() {
 
       {/* ── ONGLET APERÇU ── */}
       {activeTab === "apercu" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "20px",
-          }}
-        >
-          {/* Répartition CA */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Graphique évolution CA */}
           <div className="card">
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "20px",
-                marginBottom: "20px",
-              }}
-            >
-              Répartition du CA
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-            >
-              {[
-                { label: "CA Brut", value: ca, pct: 100, color: "var(--noir)" },
-                {
-                  label: "Commission LIVRR (20%)",
-                  value: commissions,
-                  pct: 20,
-                  color: "var(--error)",
-                },
-                {
-                  label: "Net boutique (80%)",
-                  value: ca - commissions,
-                  pct: 80,
-                  color: "var(--success)",
-                },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: "13px",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    <span style={{ color: "var(--gray)" }}>{item.label}</span>
-                    <span style={{ fontWeight: "700", color: item.color }}>
-                      {item.value.toLocaleString("fr-FR")} €
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: "6px",
-                      background: "rgba(0,0,0,0.06)",
-                      borderRadius: "3px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${item.pct}%`,
-                        background: item.color,
-                        borderRadius: "3px",
-                        transition: "width 0.6s ease",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* PSP notice */}
-            <div
-              style={{
-                marginTop: "20px",
-                padding: "12px 14px",
-                background: "var(--warning-bg)",
-                borderRadius: "10px",
-                border: "1px solid rgba(183,119,13,0.2)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  color: "var(--warning)",
-                  marginBottom: "3px",
-                }}
-              >
-                ⏳ DÉLAI PSP EUROPÉEN
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "var(--warning)",
-                  opacity: 0.9,
-                }}
-              >
-                Les fonds restent sur la plateforme{" "}
-                <strong>14 jours minimum</strong> avant versement (conformité
-                DSP2).
-              </div>
-            </div>
-          </div>
-
-          {/* Statuts des fonds */}
-          <div className="card">
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "20px",
-                marginBottom: "20px",
-              }}
-            >
-              Statut des fonds
-            </h3>
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
-                gap: "10px",
+                justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: "20px",
               }}
             >
-              {[
-                {
-                  label: "Versés sur compte",
-                  value: netVerse,
-                  icon: "✓",
-                  color: "var(--success)",
-                  bg: "var(--success-bg)",
-                },
-                {
-                  label: "En attente (délai 14j)",
-                  value: enAttente,
-                  icon: "⏳",
-                  color: "var(--warning)",
-                  bg: "var(--warning-bg)",
-                },
-                {
-                  label: "Remboursements",
-                  value: remboursements,
-                  icon: "↩",
-                  color: "var(--error)",
-                  bg: "var(--error-bg)",
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "14px",
-                    background: item.bg,
-                    borderRadius: "10px",
-                  }}
+              <h3
+                style={{ fontFamily: "var(--font-display)", fontSize: "20px" }}
+              >
+                Évolution du CA
+              </h3>
+              <div style={{ display: "flex", gap: "16px", fontSize: "12px" }}>
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
                 >
-                  <div
+                  <span
                     style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "50%",
-                      background: item.color,
+                      width: "12px",
+                      height: "3px",
+                      background: "var(--noir)",
+                      display: "inline-block",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  CA Brut
+                </span>
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span
+                    style={{
+                      width: "12px",
+                      height: "3px",
+                      background: "var(--gold)",
+                      display: "inline-block",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  Net boutique
+                </span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart
+                data={EVOLUTION_DATA}
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(0,0,0,0.06)"
+                />
+                <XAxis
+                  dataKey="periode"
+                  tick={{ fontSize: 11, fill: "var(--gray)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "var(--gray)" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k€`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="ca"
+                  stroke="var(--noir)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "var(--noir)" }}
+                  activeDot={{ r: 5 }}
+                  name="ca"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="net"
+                  stroke="#c9a96e"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#c9a96e" }}
+                  activeDot={{ r: 5 }}
+                  name="net"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+            }}
+          >
+            {/* Top produits */}
+            <div className="card">
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "20px",
+                  marginBottom: "16px",
+                }}
+              >
+                Top produits
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                {topProduits.map((p, i) => (
+                  <div
+                    key={p.produit}
+                    style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontWeight: "700",
-                      fontSize: "14px",
-                      flexShrink: 0,
+                      gap: "12px",
                     }}
                   >
-                    {item.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
                     <div
                       style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        background:
+                          i === 0
+                            ? "var(--gold)"
+                            : i === 1
+                            ? "var(--gold-light)"
+                            : "var(--gray-bg)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: "800",
+                        color: i < 2 ? "var(--noir)" : "var(--gray)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {i + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {p.produit}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "var(--gray)" }}>
+                        {p.categorie} · {p.ventes} vente
+                        {p.ventes > 1 ? "s" : ""}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: "700",
+                        fontSize: "14px",
+                        color: "var(--noir)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {p.ca.toLocaleString("fr-FR")} €
+                    </div>
+                  </div>
+                ))}
+                {topProduits.length === 0 && (
+                  <p
+                    style={{
+                      color: "var(--gray)",
+                      fontSize: "13px",
+                      textAlign: "center",
+                      padding: "16px 0",
+                    }}
+                  >
+                    Aucune vente sur cette période
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Top catégories */}
+            <div className="card">
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "20px",
+                  marginBottom: "16px",
+                }}
+              >
+                Répartition par catégorie
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                {topCats.map((c) => (
+                  <div key={c.categorie}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "13px",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      <span style={{ fontWeight: "600" }}>{c.categorie}</span>
+                      <span style={{ color: "var(--gray)" }}>
+                        {c.ca.toLocaleString("fr-FR")} €
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: "6px",
+                        background: "rgba(0,0,0,0.06)",
+                        borderRadius: "3px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${Math.round((c.ca / maxCat) * 100)}%`,
+                          background:
+                            "linear-gradient(90deg, var(--gold-dark), var(--gold))",
+                          borderRadius: "3px",
+                          transition: "width 0.6s ease",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {topCats.length === 0 && (
+                  <p
+                    style={{
+                      color: "var(--gray)",
+                      fontSize: "13px",
+                      textAlign: "center",
+                      padding: "16px 0",
+                    }}
+                  >
+                    Aucune vente sur cette période
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Répartition CA */}
+            <div className="card">
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "20px",
+                  marginBottom: "16px",
+                }}
+              >
+                Répartition du CA
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                {[
+                  {
+                    label: "CA Brut",
+                    value: ca,
+                    pct: 100,
+                    color: "var(--noir)",
+                  },
+                  {
+                    label: "Commission LIVRR 20%",
+                    value: commissions,
+                    pct: 20,
+                    color: "var(--error)",
+                  },
+                  {
+                    label: "Net boutique 80%",
+                    value: ca - commissions,
+                    pct: 80,
+                    color: "var(--success)",
+                  },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "13px",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      <span style={{ color: "var(--gray)" }}>{item.label}</span>
+                      <span style={{ fontWeight: "700", color: item.color }}>
+                        {item.value.toLocaleString("fr-FR")} €
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: "6px",
+                        background: "rgba(0,0,0,0.06)",
+                        borderRadius: "3px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${item.pct}%`,
+                          background: item.color,
+                          borderRadius: "3px",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "12px 14px",
+                  background: "var(--warning-bg)",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(183,119,13,0.2)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "var(--warning)",
+                    marginBottom: "2px",
+                  }}
+                >
+                  ⏳ DÉLAI PSP EUROPÉEN
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--warning)" }}>
+                  Fonds bloqués <strong>14 jours min.</strong> avant versement
+                  (DSP2).
+                </div>
+              </div>
+            </div>
+
+            {/* Statut des fonds */}
+            <div className="card">
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "20px",
+                  marginBottom: "16px",
+                }}
+              >
+                Statut des fonds
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  marginBottom: "16px",
+                }}
+              >
+                {[
+                  {
+                    label: "Versés sur compte",
+                    value: netVerse,
+                    icon: "✓",
+                    color: "var(--success)",
+                    bg: "var(--success-bg)",
+                  },
+                  {
+                    label: "En attente (14j)",
+                    value: enAttente,
+                    icon: "⏳",
+                    color: "var(--warning)",
+                    bg: "var(--warning-bg)",
+                  },
+                  {
+                    label: "Remboursements",
+                    value: remboursements,
+                    icon: "↩",
+                    color: "var(--error)",
+                    bg: "var(--error-bg)",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px 14px",
+                      background: item.bg,
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        background: item.color,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: "700",
+                        fontSize: "13px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.icon}
+                    </div>
+                    <div
+                      style={{
+                        flex: 1,
                         fontSize: "12px",
                         color: item.color,
                         fontWeight: "600",
@@ -546,103 +1036,34 @@ export default function Finance() {
                     >
                       {item.label}
                     </div>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: "18px",
+                        color: item.color,
+                      }}
+                    >
+                      {item.value.toLocaleString("fr-FR")} €
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "20px",
-                      color: item.color,
-                      fontWeight: "400",
-                    }}
-                  >
-                    {item.value.toLocaleString("fr-FR")} €
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div
+                style={{
+                  borderTop: "1px solid rgba(0,0,0,0.07)",
+                  paddingTop: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span style={{ fontSize: "13px", color: "var(--gray)" }}>
+                  Prochain versement estimé
+                </span>
+                <span style={{ fontWeight: "700", fontSize: "13px" }}>
+                  23 Avril 2026
+                </span>
+              </div>
             </div>
-
-            <div
-              style={{
-                borderTop: "1px solid rgba(0,0,0,0.07)",
-                paddingTop: "14px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span style={{ fontSize: "13px", color: "var(--gray)" }}>
-                Prochain versement estimé
-              </span>
-              <span style={{ fontWeight: "700", fontSize: "14px" }}>
-                23 Avril 2026
-              </span>
-            </div>
-          </div>
-
-          {/* Transactions récentes */}
-          <div className="card" style={{ gridColumn: "1 / -1" }}>
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "20px",
-                marginBottom: "16px",
-              }}
-            >
-              Dernières transactions
-            </h3>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Commande</th>
-                  <th>Client</th>
-                  <th>Montant</th>
-                  <th>Commission</th>
-                  <th>Net boutique</th>
-                  <th>Mode</th>
-                  <th>Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.slice(0, 5).map((t) => {
-                  const cfg = STATUT_CONFIG[t.statut];
-                  return (
-                    <tr key={t.id}>
-                      <td style={{ color: "var(--gray)", fontSize: "13px" }}>
-                        {new Date(t.date).toLocaleDateString("fr-FR")}
-                      </td>
-                      <td
-                        style={{
-                          fontFamily: "monospace",
-                          fontWeight: "700",
-                          fontSize: "13px",
-                        }}
-                      >
-                        {t.commande}
-                      </td>
-                      <td style={{ fontWeight: "500" }}>{t.client}</td>
-                      <td style={{ fontWeight: "700" }}>{t.montant} €</td>
-                      <td style={{ color: "var(--error)", fontSize: "13px" }}>
-                        −{t.commission} €
-                      </td>
-                      <td
-                        style={{ fontWeight: "700", color: "var(--success)" }}
-                      >
-                        {t.net} €
-                      </td>
-                      <td style={{ fontSize: "13px", color: "var(--gray)" }}>
-                        {t.mode}
-                      </td>
-                      <td>
-                        <span className={`badge ${cfg.cls}`}>
-                          {cfg.icon} {cfg.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
           </div>
         </div>
       )}
@@ -660,7 +1081,7 @@ export default function Finance() {
             }}
           >
             <span style={{ fontSize: "14px", fontWeight: "600" }}>
-              {filtered.length} transaction(s) sur la période
+              {filtered.length} transaction(s)
             </span>
             <button
               className="btn-outline"
@@ -677,9 +1098,11 @@ export default function Finance() {
                 <th>Date</th>
                 <th>Commande</th>
                 <th>Client</th>
-                <th>Montant brut</th>
-                <th>Commission 20%</th>
-                <th>Net boutique</th>
+                <th>Produit</th>
+                <th>Catégorie</th>
+                <th>Montant</th>
+                <th>Commission</th>
+                <th>Net</th>
                 <th>Mode</th>
                 <th>Statut</th>
               </tr>
@@ -692,7 +1115,7 @@ export default function Finance() {
                     <td
                       style={{
                         fontFamily: "monospace",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         color: "var(--gray)",
                       }}
                     >
@@ -711,8 +1134,19 @@ export default function Finance() {
                       {t.commande}
                     </td>
                     <td style={{ fontWeight: "500" }}>{t.client}</td>
+                    <td style={{ fontSize: "13px" }}>{t.produit}</td>
+                    <td>
+                      <span
+                        className="badge badge-gray"
+                        style={{ fontSize: "10px" }}
+                      >
+                        {t.categorie}
+                      </span>
+                    </td>
                     <td style={{ fontWeight: "700" }}>{t.montant} €</td>
-                    <td style={{ color: "var(--error)" }}>−{t.commission} €</td>
+                    <td style={{ color: "var(--error)", fontSize: "13px" }}>
+                      −{t.commission} €
+                    </td>
                     <td style={{ fontWeight: "700", color: "var(--success)" }}>
                       {t.net} €
                     </td>
@@ -729,8 +1163,6 @@ export default function Finance() {
               })}
             </tbody>
           </table>
-
-          {/* Total footer */}
           <div
             style={{
               padding: "14px 24px",
@@ -741,68 +1173,45 @@ export default function Finance() {
               gap: "40px",
             }}
           >
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "var(--gray)",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                CA Brut
+            {[
+              { label: "CA Brut", value: ca, color: "var(--noir)" },
+              {
+                label: "Commission",
+                value: `−${commissions}`,
+                color: "var(--error)",
+              },
+              {
+                label: "Net boutique",
+                value: ca - commissions,
+                color: "var(--success)",
+              },
+            ].map((s) => (
+              <div key={s.label} style={{ textAlign: "right" }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: s.color,
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    marginBottom: "2px",
+                  }}
+                >
+                  {s.label}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "20px",
+                    color: s.color,
+                  }}
+                >
+                  {typeof s.value === "number"
+                    ? s.value.toLocaleString("fr-FR")
+                    : s.value}{" "}
+                  €
+                </div>
               </div>
-              <div
-                style={{ fontFamily: "var(--font-display)", fontSize: "20px" }}
-              >
-                {ca.toLocaleString("fr-FR")} €
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "var(--error)",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                Commission
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "20px",
-                  color: "var(--error)",
-                }}
-              >
-                −{commissions.toLocaleString("fr-FR")} €
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "var(--success)",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  marginBottom: "2px",
-                }}
-              >
-                Net boutique
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "20px",
-                  color: "var(--success)",
-                }}
-              >
-                {(ca - commissions).toLocaleString("fr-FR")} €
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}
@@ -889,11 +1298,9 @@ export default function Finance() {
               </button>
             </div>
           ))}
-
           <div
             style={{
-              marginTop: "8px",
-              padding: "16px 20px",
+              padding: "14px 18px",
               background: "var(--gray-bg)",
               borderRadius: "12px",
               border: "1px solid rgba(0,0,0,0.07)",
@@ -906,9 +1313,8 @@ export default function Finance() {
                 lineHeight: 1.6,
               }}
             >
-              <strong>Conservation des documents :</strong> Tous les documents
-              comptables sont conservés pendant 10 ans conformément à la
-              réglementation française. En cas de litige, contactez{" "}
+              <strong>Conservation :</strong> Documents conservés 10 ans
+              (réglementation française). Contact :{" "}
               <span style={{ color: "var(--gold)" }}>finance@livrr.fr</span>
             </div>
           </div>

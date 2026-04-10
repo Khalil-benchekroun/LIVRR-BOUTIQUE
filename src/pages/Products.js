@@ -32,6 +32,26 @@ const INIT_PRODUCTS = [
     stock: 50,
     active: true,
   },
+  {
+    _id: "p3",
+    image: null,
+    name: "Parfum Oud 50ml",
+    brand: "Maison Crivelli",
+    category: "Beauté",
+    price: 280,
+    stock: 15,
+    active: true,
+  },
+  {
+    _id: "p4",
+    image: null,
+    name: "Sérum Éclat Visage",
+    brand: "Augustinus Bader",
+    category: "Beauté",
+    price: 185,
+    stock: 8,
+    active: true,
+  },
 ];
 
 const EMPTY_FORM = {

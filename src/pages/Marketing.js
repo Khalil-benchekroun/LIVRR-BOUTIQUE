@@ -11,6 +11,7 @@ const INITIAL_COUPONS = [
     minOrder: 50,
     usage: 145,
     maxUsage: 500,
+    maxUsagePerUser: 1,
     expiry: "2026-12-31",
     active: true,
     createdAt: "2026-01-15",
@@ -23,6 +24,7 @@ const INITIAL_COUPONS = [
     minOrder: 30,
     usage: 89,
     maxUsage: 200,
+    maxUsagePerUser: 1,
     expiry: "2026-06-30",
     active: false,
     createdAt: "2026-01-20",
@@ -35,6 +37,7 @@ const INITIAL_COUPONS = [
     minOrder: 150,
     usage: 34,
     maxUsage: 100,
+    maxUsagePerUser: 2,
     expiry: "2026-04-30",
     active: true,
     createdAt: "2026-03-01",
@@ -47,6 +50,7 @@ const INITIAL_COUPONS = [
     minOrder: 80,
     usage: 12,
     maxUsage: 50,
+    maxUsagePerUser: 3,
     expiry: "2026-04-10",
     active: true,
     createdAt: "2026-03-15",
@@ -117,6 +121,7 @@ const EMPTY_COUPON = {
   value: "",
   minOrder: "",
   maxUsage: "",
+  maxUsagePerUser: "",
   expiry: "",
 };
 const EMPTY_PROMO = {
@@ -184,6 +189,7 @@ export default function Marketing() {
       value: parseFloat(couponForm.value),
       minOrder: parseFloat(couponForm.minOrder) || 0,
       maxUsage: parseInt(couponForm.maxUsage) || 999,
+      maxUsagePerUser: parseInt(couponForm.maxUsagePerUser) || 1,
     };
     setCoupons([coupon, ...coupons]);
     setShowCouponModal(false);
@@ -492,7 +498,7 @@ export default function Marketing() {
                   <td>
                     <div style={{ fontWeight: "700" }}>{c.usage}</div>
                     <div style={{ fontSize: "10px", color: "var(--gray)" }}>
-                      / {c.maxUsage} max
+                      / {c.maxUsage} max total
                     </div>
                     {/* Barre de progression */}
                     <div
@@ -518,6 +524,16 @@ export default function Marketing() {
                               : "var(--gold)",
                         }}
                       />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--gold-dark)",
+                        marginTop: "4px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {c.maxUsagePerUser || 1}× / utilisateur
                     </div>
                   </td>
                   <td>
@@ -1108,7 +1124,7 @@ export default function Marketing() {
                   />
                 </div>
                 <div>
-                  <label className="label">Nb. utilisations max</label>
+                  <label className="label">Nb. utilisations max (total)</label>
                   <input
                     className="input-field"
                     type="number"
@@ -1116,6 +1132,24 @@ export default function Marketing() {
                     value={couponForm.maxUsage}
                     onChange={(e) =>
                       setCouponForm({ ...couponForm, maxUsage: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label">
+                    Nb. utilisations max par client
+                  </label>
+                  <input
+                    className="input-field"
+                    type="number"
+                    placeholder="1"
+                    min="1"
+                    value={couponForm.maxUsagePerUser}
+                    onChange={(e) =>
+                      setCouponForm({
+                        ...couponForm,
+                        maxUsagePerUser: e.target.value,
+                      })
                     }
                   />
                 </div>
