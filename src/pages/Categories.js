@@ -22,7 +22,7 @@ export default function Categories() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       <div
         style={{
           display: "flex",

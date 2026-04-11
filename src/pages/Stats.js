@@ -1,643 +1,862 @@
 import React, { useState, useMemo } from "react";
-import toast from "react-hot-toast";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
-export default function Stats() {
-  // --- ÉTAT DES DATES (Format ISO pour les inputs HTML5) ---
-  const today = "2026-04-04";
-  const [startDate, setStartDate] = useState("2026-03-04");
-  const [endDate, setEndDate] = useState(today);
+/* ============================================================
+   LIVRR — Statistiques & Performances
+   Recharts · Comparaison périodes · Top produits · Heures de pointe
+   ============================================================ */
 
-  // --- CALCULATEUR DE DONNÉES (Simule un Backend) ---
-  const stats = useMemo(() => {
-    const diffInDays = Math.floor(
-      (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)
-    );
-    const dayFactor = diffInDays <= 0 ? 1 : diffInDays;
+const PERIODES = [
+  { key: "7j", label: "7 jours" },
+  { key: "30j", label: "30 jours" },
+  { key: "3m", label: "3 mois" },
+  { key: "6m", label: "6 mois" },
+  { key: "1an", label: "1 an" },
+];
 
-    // Simulation de CA basé sur la durée sélectionnée
-    const caBrut = 8200 * dayFactor;
-    const commRate = 0.2; // 20%
-    const commission = caBrut * commRate;
-    const caNet = caBrut - commission;
+// Génération données CA par semaine
+const genCA = (weeks, base, variance) =>
+  Array.from({ length: weeks }, (_, i) => ({
+    label: `S${i + 1}`,
+    ca: Math.round(base + (Math.random() - 0.4) * variance),
+    caPrec: Math.round(base * 0.85 + (Math.random() - 0.4) * variance * 0.8),
+  }));
 
-    return {
-      caBrut: caBrut.toLocaleString("fr-FR"),
-      commission: commission.toLocaleString("fr-FR"),
-      caNet: caNet.toLocaleString("fr-FR"),
-      orders: Math.floor(28 * dayFactor),
-      avgBasket: "292",
-      conversion: "4.2",
-      newClients: Math.floor(5 * dayFactor),
-      retention: "38",
-      topProducts: [
-        {
-          name: "Robe Midi Fleurie",
-          sales: Math.floor(4 * dayFactor),
-          revenue: (1960 * dayFactor).toLocaleString(),
-          growth: "+12%",
-        },
-        {
-          name: "Trench Camel",
-          sales: Math.floor(2 * dayFactor),
-          revenue: (1780 * dayFactor).toLocaleString(),
-          growth: "+5%",
-        },
-        {
-          name: "Sac Cuir Noir",
-          sales: Math.floor(1.5 * dayFactor),
-          revenue: (1800 * dayFactor).toLocaleString(),
-          growth: "-2%",
-        },
-        {
-          name: "Mules Beige T38",
-          sales: Math.floor(3 * dayFactor),
-          revenue: (750 * dayFactor).toLocaleString(),
-          growth: "+25%",
-        },
-      ],
-      hourlyTraffic: [
-        2, 5, 8, 12, 18, 25, 32, 45, 38, 30, 28, 35, 42, 55, 68, 75, 62, 48, 35,
-        22, 15, 8, 4, 2,
-      ], // 24h
-    };
-  }, [startDate, endDate]);
+const DATA_MAP = {
+  "7j": genCA(7, 1200, 600),
+  "30j": genCA(4, 8200, 3000),
+  "3m": genCA(12, 8200, 3000),
+  "6m": genCA(24, 8200, 4000),
+  "1an": genCA(52, 8200, 4000),
+};
 
-  const handleExport = (type) => {
-    toast.loading(`Préparation de l'export ${type}...`);
-    setTimeout(() => toast.success(`Rapport ${type} envoyé par email !`), 2000);
-  };
+const HEURES_POINTE = [
+  { h: "9h", commandes: 2 },
+  { h: "10h", commandes: 5 },
+  { h: "11h", commandes: 8 },
+  { h: "12h", commandes: 12 },
+  { h: "13h", commandes: 9 },
+  { h: "14h", commandes: 14 },
+  { h: "15h", commandes: 11 },
+  { h: "16h", commandes: 16 },
+  { h: "17h", commandes: 20 },
+  { h: "18h", commandes: 18 },
+  { h: "19h", commandes: 10 },
+  { h: "20h", commandes: 4 },
+];
 
-  const setRange = (days) => {
-    const end = new Date(today);
-    const start = new Date(today);
-    start.setDate(end.getDate() - days);
-    setStartDate(start.toISOString().split("T")[0]);
-    setEndDate(end.toISOString().split("T")[0]);
-    toast.success("Analyse mise à jour");
-  };
+const TOP_PRODUITS = [
+  {
+    name: "Robe Midi Fleurie",
+    ca: 14800,
+    ventes: 32,
+    growth: "+18%",
+    up: true,
+  },
+  { name: "Trench Camel", ca: 11200, ventes: 14, growth: "+7%", up: true },
+  { name: "Parfum Oud 50ml", ca: 8400, ventes: 28, growth: "+22%", up: true },
+  { name: "Blazer Structuré", ca: 5900, ventes: 21, growth: "-3%", up: false },
+  {
+    name: "Sérum Éclat Visage",
+    ca: 5200,
+    ventes: 26,
+    growth: "+11%",
+    up: true,
+  },
+];
 
+const CLIENTS_ACTIFS = [
+  { mois: "Nov", nouveaux: 18, recurrents: 32 },
+  { mois: "Déc", nouveaux: 24, recurrents: 41 },
+  { mois: "Jan", nouveaux: 31, recurrents: 38 },
+  { mois: "Fév", nouveaux: 28, recurrents: 45 },
+  { mois: "Mar", nouveaux: 35, recurrents: 52 },
+  { mois: "Avr", nouveaux: 22, recurrents: 48 },
+];
+
+// Tooltip personnalisé
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
   return (
     <div
-      className="page"
-      style={{ paddingBottom: "100px", maxWidth: "1600px", margin: "0 auto" }}
-    >
-      {/* 1. BARRE D'OUTILS BI (Business Intelligence) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px",
-          background: "#fff",
-          padding: "24px",
-          borderRadius: "20px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "38px",
-              margin: 0,
-              letterSpacing: "-1px",
-            }}
-          >
-            Business Analytics
-          </h1>
-          <p
-            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "5px" }}
-          >
-            Tableau de bord consolidé •{" "}
-            <strong>Sandro Paris - Champs-Élysées</strong>
-          </p>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-          {/* SÉLECTEUR DE DATES CALENDRIER */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              background: "#F8F9FA",
-              padding: "10px 20px",
-              borderRadius: "12px",
-              border: "1px solid #EEE",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: "800",
-                  color: "var(--gray)",
-                }}
-              >
-                DU
-              </span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={inputDateStyle}
-              />
-            </div>
-            <div
-              style={{ width: "1px", height: "30px", background: "#DDD" }}
-            ></div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: "800",
-                  color: "var(--gray)",
-                }}
-              >
-                AU
-              </span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={inputDateStyle}
-              />
-            </div>
-          </div>
-
-          {/* RACCOURCIS */}
-          <div style={{ display: "flex", gap: "5px" }}>
-            <button onClick={() => setRange(0)} style={btnQuickStyle}>
-              Auj.
-            </button>
-            <button onClick={() => setRange(7)} style={btnQuickStyle}>
-              7J
-            </button>
-            <button onClick={() => setRange(30)} style={btnQuickStyle}>
-              30J
-            </button>
-          </div>
-
-          <button
-            onClick={() => handleExport("EXCEL")}
-            style={{
-              background: "var(--noir)",
-              color: "#fff",
-              border: "none",
-              padding: "15px 25px",
-              borderRadius: "12px",
-              fontWeight: "700",
-              cursor: "pointer",
-              fontSize: "13px",
-            }}
-          >
-            📥 EXPORTER BI
-          </button>
-        </div>
-      </div>
-
-      {/* 2. GRILLE DE KPIS FINANCIERS ET OPÉRATIONNELS */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
-          gap: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <StatCard
-          label="C.A BRUT"
-          value={`${stats.caBrut} €`}
-          sub="+12.4%"
-          color="var(--noir)"
-        />
-        <StatCard
-          label="COMM. LIVRR (20%)"
-          value={`-${stats.commission} €`}
-          sub="Frais plateforme"
-          color="var(--error)"
-        />
-        <StatCard
-          label="REVENU NET"
-          value={`${stats.caNet} €`}
-          sub="Versement estimé"
-          color="var(--success)"
-        />
-        <StatCard
-          label="COMMANDES"
-          value={stats.orders}
-          sub="Volume total"
-          color="var(--noir)"
-        />
-        <StatCard
-          label="PANIER MOYEN"
-          value={`${stats.avgBasket} €`}
-          sub="Stable"
-          color="var(--noir)"
-        />
-        <StatCard
-          label="CONVERSION"
-          value={`${stats.conversion}%`}
-          sub="Top 10% secteur"
-          color="var(--gold)"
-        />
-      </div>
-
-      {/* 3. SECTION ANALYSE GRAPHIQUE COMPLÈTE */}
-      <div
-        style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "30px" }}
-      >
-        {/* COLONNE GAUCHE */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-          {/* GRAPH CA : BRUT vs NET */}
-          <div
-            className="card"
-            style={{ minHeight: "480px", position: "relative" }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "40px",
-              }}
-            >
-              <h3
-                style={{ fontFamily: "var(--font-display)", fontSize: "22px" }}
-              >
-                Flux Financier Mensuel
-              </h3>
-              <div style={{ display: "flex", gap: "15px", fontSize: "12px" }}>
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "5px" }}
-                >
-                  <div
-                    style={{ width: 10, height: 10, background: "var(--noir)" }}
-                  ></div>{" "}
-                  Net
-                </span>
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "5px" }}
-                >
-                  <div
-                    style={{
-                      width: 10,
-                      height: 10,
-                      background: "rgba(231, 76, 60, 0.2)",
-                    }}
-                  ></div>{" "}
-                  Comm. LIVRR
-                </span>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-around",
-                height: "300px",
-                gap: "15px",
-              }}
-            >
-              {[30, 45, 60, 80, 55, 90, 110, 85, 75, 95, 120, 105].map(
-                (h, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-end",
-                      height: "100%",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: `${h * 0.2}%`,
-                        background: "rgba(231, 76, 60, 0.2)",
-                        borderRadius: "3px 3px 0 0",
-                      }}
-                    ></div>
-                    <div
-                      style={{
-                        height: `${h * 0.8}%`,
-                        background: i === 10 ? "var(--gold)" : "var(--noir)",
-                        borderRadius: "0 0 3px 3px",
-                        position: "relative",
-                      }}
-                    >
-                      {h > 100 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                            fontSize: "10px",
-                            fontWeight: "bold",
-                            marginBottom: "30px",
-                          }}
-                        >
-                          {h}k
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: "20px",
-                fontSize: "11px",
-                color: "var(--gray)",
-                padding: "0 10px",
-                fontWeight: "600",
-              }}
-            >
-              <span>JAN</span>
-              <span>FÉV</span>
-              <span>MAR</span>
-              <span>AVR</span>
-              <span>MAI</span>
-              <span>JUIN</span>
-              <span>JUIL</span>
-              <span>AOÛT</span>
-              <span>SEP</span>
-              <span>OCT</span>
-              <span>NOV</span>
-              <span>DÉC</span>
-            </div>
-          </div>
-
-          {/* HEATMAP HORAIRE (AFFLUENCE MAGASIN) */}
-          <div className="card">
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "20px",
-                marginBottom: "20px",
-              }}
-            >
-              Densité de Commandes par Heure
-            </h3>
-            <div
-              style={{
-                display: "flex",
-                gap: "4px",
-                height: "60px",
-                alignItems: "flex-end",
-              }}
-            >
-              {stats.hourlyTraffic.map((v, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: `${v}%`,
-                    background:
-                      v > 50 ? "var(--gold)" : "rgba(10, 10, 15, 0.1)",
-                    borderRadius: "4px",
-                  }}
-                  title={`${i}h : ${v} commandes`}
-                ></div>
-              ))}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: "10px",
-                fontSize: "10px",
-                color: "var(--gray)",
-                fontWeight: "bold",
-              }}
-            >
-              <span>00H</span>
-              <span>06H</span>
-              <span>12H (Midi)</span>
-              <span>18H (Rush)</span>
-              <span>23H</span>
-            </div>
-          </div>
-        </div>
-
-        {/* COLONNE DROITE */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-          {/* BEST-SELLERS PERFORMANCE */}
-          <div className="card">
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "20px",
-                marginBottom: "25px",
-              }}
-            >
-              Top Articles
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-            >
-              {stats.topProducts.map((p, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingBottom: "15px",
-                    borderBottom: i !== 3 ? "1px solid #F5F5F5" : "none",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: "700" }}>
-                      {p.name}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                      {p.sales} vendus • {p.revenue} €
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      color: p.growth.includes("+")
-                        ? "var(--success)"
-                        : "var(--error)",
-                      fontSize: "12px",
-                      fontWeight: "800",
-                    }}
-                  >
-                    {p.growth}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              className="btn-outline"
-              style={{ width: "100%", marginTop: "20px", fontSize: "12px" }}
-            >
-              Voir Inventaire Complet
-            </button>
-          </div>
-
-          {/* RÉPARTITION DES CANAUX */}
-          <div
-            className="card"
-            style={{ background: "var(--noir)", color: "#fff" }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                color: "var(--gold)",
-                marginBottom: "20px",
-              }}
-            >
-              Canaux d'Acquisition
-            </h3>
-            <ChannelRow label="LIVRR App" value="72" color="var(--gold)" />
-            <ChannelRow label="Sandro POS (Magasin)" value="18" color="#FFF" />
-            <ChannelRow
-              label="Click & Collect"
-              value="10"
-              color="rgba(255,255,255,0.4)"
-            />
-          </div>
-
-          {/* INSIGHT IA DYNAMIQUE */}
-          <div
-            className="card"
-            style={{
-              background: "rgba(201, 169, 110, 0.1)",
-              border: "1px dashed var(--gold)",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: "-10px",
-                right: "10px",
-                background: "var(--gold)",
-                color: "var(--noir)",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                fontSize: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              IA INSIGHT
-            </div>
-            <p style={{ fontSize: "12px", lineHeight: "1.6", margin: 0 }}>
-              💡 <strong>Analyse :</strong> Vos ventes de <em>Robe Midi</em>{" "}
-              augmentent de <strong>15%</strong> chaque samedi entre 14h et 16h.
-              Suggestion : Préparez 5 unités en avance pour réduire le temps
-              d'attente livreur.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- SOUS-COMPOSANTS POUR LA SCANNABILITÉ ---
-
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div
-      className="card"
       style={{
-        borderTop: `4px solid ${color}`,
-        minHeight: "130px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
+        background: "#fff",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: "10px",
+        padding: "12px 16px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+        fontFamily: "var(--font-body)",
       }}
     >
       <div
         style={{
-          fontSize: "10px",
-          color: "var(--gray)",
-          fontWeight: "800",
+          fontSize: "11px",
+          fontWeight: "700",
           textTransform: "uppercase",
-          letterSpacing: "1px",
+          letterSpacing: "0.08em",
+          color: "var(--gray)",
+          marginBottom: "8px",
+        }}
+      >
+        {label}
+      </div>
+      {payload.map((p, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "4px",
+          }}
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: p.color,
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "var(--noir)" }}>
+            {p.name} :{" "}
+            <strong>
+              {typeof p.value === "number" && p.value > 999
+                ? p.value.toLocaleString("fr-FR") + " €"
+                : p.value}
+            </strong>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+function StatCard({ label, value, sub, trend, prefix = "" }) {
+  const isUp = trend?.startsWith("+");
+  return (
+    <div className="card" style={{ padding: "24px 28px" }}>
+      <div
+        style={{
+          fontSize: "10px",
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+          color: "var(--text-tertiary,#aaa)",
+          marginBottom: "14px",
         }}
       >
         {label}
       </div>
       <div
         style={{
-          fontSize: "22px",
           fontFamily: "var(--font-display)",
-          fontWeight: "bold",
-          margin: "10px 0",
-          color: label.includes("COMM") ? "var(--error)" : "inherit",
+          fontSize: "40px",
+          fontWeight: "300",
+          color: "var(--noir)",
+          lineHeight: 1,
+          marginBottom: "10px",
         }}
       >
+        {prefix}
         {value}
       </div>
       <div
         style={{
-          fontSize: "11px",
-          color: sub.includes("+") ? "var(--success)" : "var(--gray)",
-          fontWeight: "600",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        {sub}
+        <span style={{ fontSize: "12px", color: "var(--gray)" }}>{sub}</span>
+        {trend && (
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              color: isUp ? "#10B981" : "#EF4444",
+            }}
+          >
+            {trend} vs période préc.
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-function ChannelRow({ label, value, color }) {
+export default function Stats() {
+  const [periode, setPeriode] = useState("30j");
+  const [activeTab, setActiveTab] = useState("ca");
+  const data = DATA_MAP[periode];
+
+  const totalCA = data.reduce((s, d) => s + d.ca, 0);
+  const totalPrec = data.reduce((s, d) => s + d.caPrec, 0);
+  const diffPct = Math.round(((totalCA - totalPrec) / totalPrec) * 100);
+  const commission = Math.round(totalCA * 0.2);
+  const caNet = totalCA - commission;
+
+  const TAB = {
+    borderBottom: "2px solid transparent",
+    padding: "10px 0",
+    marginRight: "28px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: "var(--font-body)",
+    fontSize: "13px",
+    fontWeight: "600",
+    letterSpacing: "0.04em",
+    transition: "all 0.2s",
+  };
+
   return (
-    <div style={{ marginBottom: "15px" }}>
+    <div className="page" style={{ padding: "44px 52px" }}>
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          fontSize: "12px",
-          marginBottom: "6px",
+          alignItems: "flex-end",
+          marginBottom: "40px",
         }}
       >
-        <span>{label}</span>
-        <span style={{ fontWeight: "700" }}>{value}%</span>
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--gray)",
+              marginBottom: "8px",
+            }}
+          >
+            Statistiques
+          </div>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "44px",
+              fontWeight: "300",
+              lineHeight: 1.1,
+            }}
+          >
+            Performances
+          </h1>
+        </div>
+        {/* Sélecteur de période */}
+        <div
+          style={{
+            display: "flex",
+            gap: "4px",
+            padding: "4px",
+            background: "rgba(0,0,0,0.04)",
+            borderRadius: "10px",
+          }}
+        >
+          {PERIODES.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriode(p.key)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "7px",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: "600",
+                fontFamily: "var(--font-body)",
+                transition: "all 0.2s",
+                background: periode === p.key ? "#fff" : "transparent",
+                color: periode === p.key ? "var(--noir)" : "var(--gray)",
+                boxShadow:
+                  periode === p.key ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* KPI CARDS */}
       <div
         style={{
-          width: "100%",
-          height: "4px",
-          background: "rgba(255,255,255,0.1)",
+          display: "grid",
+          gridTemplateColumns: "repeat(4,1fr)",
+          gap: "1px",
+          background: "rgba(0,0,0,0.07)",
+          marginBottom: "36px",
           borderRadius: "2px",
+          overflow: "hidden",
         }}
       >
-        <div
-          style={{ width: `${value}%`, height: "100%", background: color }}
+        <StatCard
+          label="CA Brut"
+          value={totalCA.toLocaleString("fr-FR")}
+          suffix="€"
+          prefix=""
+          sub="Commission LIVRR 20% incluse"
+          trend={`${diffPct > 0 ? "+" : ""}${diffPct}%`}
         />
+        <StatCard
+          label="CA Net boutique"
+          value={caNet.toLocaleString("fr-FR")}
+          prefix=""
+          sub="Après déduction commission"
+          trend={`${diffPct > 0 ? "+" : ""}${diffPct}%`}
+        />
+        <StatCard
+          label="Commission LIVRR"
+          value={commission.toLocaleString("fr-FR")}
+          prefix=""
+          sub="20% du CA brut"
+          trend={null}
+        />
+        <StatCard
+          label="Panier moyen"
+          value="292"
+          sub="par commande"
+          prefix=""
+          trend="+4%"
+        />
+      </div>
+
+      {/* GRAPHIQUES — TABS */}
+      <div
+        style={{
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
+          marginBottom: "28px",
+        }}
+      >
+        {[
+          { key: "ca", label: "Chiffre d'affaires" },
+          { key: "clients", label: "Clients actifs" },
+          { key: "pointe", label: "Heures de pointe" },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              ...TAB,
+              borderBottom: `2px solid ${
+                activeTab === t.key ? "var(--gold)" : "transparent"
+              }`,
+              color: activeTab === t.key ? "var(--noir)" : "var(--gray)",
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* GRAPHIQUE CA */}
+      {activeTab === "ca" && (
+        <div className="card" style={{ marginBottom: "28px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "24px",
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "22px",
+                  fontWeight: "400",
+                }}
+              >
+                Évolution du chiffre d'affaires
+              </h3>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "var(--gray)",
+                  marginTop: "2px",
+                }}
+              >
+                CA brut vs période précédente
+              </p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                fontSize: "11px",
+                fontWeight: "600",
+              }}
+            >
+              <span
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <span
+                  style={{
+                    width: "10px",
+                    height: "2px",
+                    background: "#C9A96E",
+                    display: "inline-block",
+                  }}
+                />
+                Cette période
+              </span>
+              <span
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <span
+                  style={{
+                    width: "10px",
+                    height: "2px",
+                    background: "#E5E7EB",
+                    display: "inline-block",
+                  }}
+                />
+                Période préc.
+              </span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart
+              data={data}
+              margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            >
+              <defs>
+                <linearGradient id="gradCA" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#C9A96E" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#C9A96E" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradPrec" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#E5E7EB" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#E5E7EB" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(0,0,0,0.05)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => v.toLocaleString("fr-FR") + "€"}
+                width={70}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="caPrec"
+                name="Période préc."
+                stroke="#E5E7EB"
+                strokeWidth={2}
+                fill="url(#gradPrec)"
+                dot={false}
+              />
+              <Area
+                type="monotone"
+                dataKey="ca"
+                name="Cette période"
+                stroke="#C9A96E"
+                strokeWidth={2.5}
+                fill="url(#gradCA)"
+                dot={false}
+                activeDot={{ r: 5, fill: "#C9A96E", strokeWidth: 0 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* GRAPHIQUE CLIENTS */}
+      {activeTab === "clients" && (
+        <div className="card" style={{ marginBottom: "28px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "22px",
+                fontWeight: "400",
+              }}
+            >
+              Clients actifs par mois
+            </h3>
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--gray)",
+                marginTop: "2px",
+              }}
+            >
+              Nouveaux clients vs clients récurrents
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={CLIENTS_ACTIFS}
+              margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+              barGap={4}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(0,0,0,0.05)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="mois"
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar
+                dataKey="nouveaux"
+                name="Nouveaux clients"
+                fill="#C9A96E"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="recurrents"
+                name="Clients récurrents"
+                fill="#0A0A0F"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* GRAPHIQUE HEURES DE POINTE */}
+      {activeTab === "pointe" && (
+        <div className="card" style={{ marginBottom: "28px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "22px",
+                fontWeight: "400",
+              }}
+            >
+              Heures de pointe
+            </h3>
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--gray)",
+                marginTop: "2px",
+              }}
+            >
+              Commandes reçues par heure sur la période
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={HEURES_POINTE}
+              margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(0,0,0,0.05)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="h"
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#aaa" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar
+                dataKey="commandes"
+                name="Commandes"
+                fill="#C9A96E"
+                radius={[4, 4, 0, 0]}
+                label={{ position: "top", fontSize: 10, fill: "#aaa" }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px 16px",
+              background: "rgba(201,169,110,0.06)",
+              borderRadius: "8px",
+              fontSize: "13px",
+              color: "var(--gray)",
+            }}
+          >
+            💡 Pic d'activité entre{" "}
+            <strong style={{ color: "var(--noir)" }}>17h et 18h</strong> —
+            assurez-vous d'avoir votre équipe au complet à ces heures.
+          </div>
+        </div>
+      )}
+
+      {/* TOP PRODUITS + STATS RAPIDES */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 320px",
+          gap: "24px",
+        }}
+      >
+        {/* TOP PRODUITS */}
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              padding: "20px 24px",
+              borderBottom: "1px solid rgba(0,0,0,0.06)",
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "22px",
+                fontWeight: "400",
+              }}
+            >
+              Top produits
+            </h3>
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--gray)",
+                marginTop: "2px",
+              }}
+            >
+              Par chiffre d'affaires sur la période
+            </p>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(0,0,0,0.02)" }}>
+                {["#", "Produit", "CA", "Ventes", "Tendance"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "11px 20px",
+                      textAlign: "left",
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      color: "#bbb",
+                      borderBottom: "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TOP_PRODUITS.map((p, i) => (
+                <tr
+                  key={p.name}
+                  style={{
+                    borderBottom: "1px solid rgba(0,0,0,0.04)",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#FAFAF8")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <td
+                    style={{
+                      padding: "16px 20px",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "18px",
+                      color: "#ddd",
+                      fontWeight: "300",
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </td>
+                  <td
+                    style={{
+                      padding: "16px 20px",
+                      fontWeight: "600",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {p.name}
+                  </td>
+                  <td
+                    style={{
+                      padding: "16px 20px",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                    }}
+                  >
+                    {p.ca.toLocaleString("fr-FR")} €
+                  </td>
+                  <td
+                    style={{
+                      padding: "16px 20px",
+                      fontSize: "13px",
+                      color: "var(--gray)",
+                    }}
+                  >
+                    {p.ventes} vendus
+                  </td>
+                  <td style={{ padding: "16px 20px" }}>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: "700",
+                        color: p.up ? "#10B981" : "#EF4444",
+                        background: p.up
+                          ? "rgba(16,185,129,0.08)"
+                          : "rgba(239,68,68,0.08)",
+                        padding: "3px 10px",
+                        borderRadius: "20px",
+                      }}
+                    >
+                      {p.up ? "↑" : "↓"} {p.growth}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* STATS RAPIDES */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {[
+            {
+              label: "Commandes totales",
+              value: `${Math.round(data.length * 28)}`,
+              icon: "📦",
+              sub: "sur la période",
+            },
+            {
+              label: "Taux de conversion",
+              value: "4.2%",
+              icon: "📈",
+              sub: "+0.3% vs période préc.",
+            },
+            {
+              label: "Nouveaux clients",
+              value: "87",
+              icon: "👤",
+              sub: "sur la période",
+            },
+            {
+              label: "Taux de fidélisation",
+              value: "38%",
+              icon: "❤️",
+              sub: "clients récurrents",
+            },
+            {
+              label: "Note moyenne boutique",
+              value: "4.8★",
+              icon: "⭐",
+              sub: "sur 248 avis",
+            },
+            {
+              label: "Délai moyen livraison",
+              value: "42 min",
+              icon: "🛵",
+              sub: "objectif < 60 min ✓",
+            },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="card"
+              style={{
+                padding: "16px 20px",
+                display: "flex",
+                gap: "14px",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "10px",
+                  background: "rgba(201,169,110,0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "18px",
+                  flexShrink: 0,
+                }}
+              >
+                {s.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--gray)",
+                    marginBottom: "3px",
+                  }}
+                >
+                  {s.label}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "22px",
+                    fontWeight: "300",
+                  }}
+                >
+                  {s.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--gray)",
+                    marginTop: "1px",
+                  }}
+                >
+                  {s.sub}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-
-// --- STYLES REUTILISABLES ---
-const inputDateStyle = {
-  border: "none",
-  fontSize: "13px",
-  fontWeight: "700",
-  outline: "none",
-  cursor: "pointer",
-  background: "transparent",
-  padding: "2px 0",
-};
-const btnQuickStyle = {
-  padding: "8px 12px",
-  fontSize: "11px",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
-  background: "#FFF",
-  fontWeight: "700",
-  color: "var(--gray)",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-};

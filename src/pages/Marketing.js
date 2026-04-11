@@ -263,27 +263,42 @@ export default function Marketing() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end",
-          marginBottom: "32px",
+          marginBottom: "40px",
         }}
       >
         <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--gray)",
+              marginBottom: "8px",
+            }}
+          >
+            Marketing
+          </div>
           <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "36px",
-              fontWeight: "400",
+              fontSize: "44px",
+              fontWeight: "300",
+              lineHeight: 1.1,
             }}
           >
-            Promotion Commerciale
+            Promotion
           </h1>
-          <p style={{ color: "var(--gray)", fontSize: "14px" }}>
+          <p
+            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "6px" }}
+          >
             Coupons, campagnes et historique des promotions
           </p>
         </div>

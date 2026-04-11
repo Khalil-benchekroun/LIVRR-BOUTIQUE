@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -28,7 +29,6 @@ import QRCodePage from "./pages/QRCode";
 import Services from "./pages/Services";
 import Finance from "./pages/Finance";
 import Support from "./pages/Support";
-import Tutorial from "./pages/Tutorial";
 import Livraisons from "./pages/Livraisons";
 import Avis from "./pages/Avis";
 import Calendrier from "./pages/Calendrier";
@@ -54,6 +54,34 @@ function ThemeProvider({ children }) {
     <ThemeContext.Provider value={{ dark, toggle: () => setDark((d) => !d) }}>
       {children}
     </ThemeContext.Provider>
+  );
+}
+
+// ── Transition entre pages ────────────────────────────────────────
+function PageTransition({ children }) {
+  const location = useLocation();
+  const [displayed, setDisplayed] = React.useState(children);
+  const [phase, setPhase] = React.useState("in"); // "in" | "out"
+
+  React.useEffect(() => {
+    setPhase("out");
+    const t = setTimeout(() => {
+      setDisplayed(children);
+      setPhase("in");
+    }, 180);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
+
+  return (
+    <div
+      style={{
+        opacity: phase === "in" ? 1 : 0,
+        transform: phase === "in" ? "translateY(0)" : "translateY(6px)",
+        transition: "opacity 0.25s ease, transform 0.25s ease",
+      }}
+    >
+      {displayed}
+    </div>
   );
 }
 
@@ -319,14 +347,6 @@ export default function App() {
                   <AppLayout>
                     <Calendrier />
                   </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/tutorial"
-              element={
-                <PrivateRoute>
-                  <Tutorial />
                 </PrivateRoute>
               }
             />

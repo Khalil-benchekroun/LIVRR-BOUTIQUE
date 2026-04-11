@@ -10,7 +10,7 @@ const PERMISSIONS = [
   },
   {
     key: "pos",
-    label: "Commande manuelle",
+    label: "Vente manuelle",
     icon: "🖊️",
     desc: "Enregistrer des ventes manuelles",
   },
@@ -55,10 +55,29 @@ const INITIAL_STAFF = [
     name: "Siham B.",
     email: "siham@sandro.fr",
     role: "Manager",
-    sales: 45,
-    commission: "850 €",
-    totalRevenue: 12400,
-    orders: ["ORD-8750", "ORD-8762", "ORD-8771"],
+    active: true,
+    avatar: "S",
+    avatarColor: "#C9A96E",
+    stats: {
+      commandes: 45,
+      caGenere: 12400,
+      tempsMoyen: 11,
+      noteMoyenne: 4.9,
+      tauxAcceptation: 98,
+    },
+    historique: [
+      {
+        date: "09/04/2026",
+        action: "Commande ORD-8821 acceptée",
+        montant: 490,
+      },
+      {
+        date: "08/04/2026",
+        action: "Commande ORD-8812 préparée",
+        montant: 890,
+      },
+      { date: "07/04/2026", action: "Vente manuelle 2 articles", montant: 680 },
+    ],
     permissions: {
       commandes: true,
       pos: true,
@@ -67,17 +86,30 @@ const INITIAL_STAFF = [
       stats: true,
       retours: true,
     },
-    active: true,
   },
   {
     id: 2,
     name: "Youssef L.",
     email: "youssef@sandro.fr",
     role: "Vendeur Senior",
-    sales: 32,
-    commission: "420 €",
-    totalRevenue: 8900,
-    orders: ["ORD-8780", "ORD-8795"],
+    active: true,
+    avatar: "Y",
+    avatarColor: "#3B82F6",
+    stats: {
+      commandes: 32,
+      caGenere: 8900,
+      tempsMoyen: 14,
+      noteMoyenne: 4.7,
+      tauxAcceptation: 94,
+    },
+    historique: [
+      {
+        date: "09/04/2026",
+        action: "Commande ORD-8815 préparée",
+        montant: 1079,
+      },
+      { date: "08/04/2026", action: "Commande ORD-8790 livrée", montant: 295 },
+    ],
     permissions: {
       commandes: true,
       pos: true,
@@ -86,19 +118,26 @@ const INITIAL_STAFF = [
       stats: false,
       retours: true,
     },
-    active: true,
   },
   {
     id: 3,
     name: "Amine R.",
     email: "amine@sandro.fr",
     role: "Vendeur Junior",
-    sales: 12,
-    commission: "150 €",
-    totalRevenue: 2800,
-    orders: ["ORD-8801"],
-    permissions: { ...DEFAULT_PERMS },
     active: false,
+    avatar: "A",
+    avatarColor: "#8B5CF6",
+    stats: {
+      commandes: 12,
+      caGenere: 2800,
+      tempsMoyen: 18,
+      noteMoyenne: 4.5,
+      tauxAcceptation: 88,
+    },
+    historique: [
+      { date: "05/04/2026", action: "Commande ORD-8770 livrée", montant: 680 },
+    ],
+    permissions: { ...DEFAULT_PERMS },
   },
 ];
 
@@ -110,458 +149,750 @@ const EMPTY_FORM = {
   permissions: { ...DEFAULT_PERMS },
 };
 
+function PercentBar({ value, max = 100, color = "#C9A96E" }) {
+  return (
+    <div
+      style={{
+        height: "4px",
+        background: "rgba(0,0,0,0.06)",
+        borderRadius: "2px",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          height: "100%",
+          width: `${(value / max) * 100}%`,
+          background: color,
+          borderRadius: "2px",
+          transition: "width 0.6s ease",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Vendors() {
   const [staff, setStaff] = useState(INITIAL_STAFF);
+  const [selected, setSelected] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showDetail, setShowDetail] = useState(null);
-  const [showPerms, setShowPerms] = useState(null); // vendeur dont on édite les perms
+  const [showPerms, setShowPerms] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
-  const totalSales = staff.reduce((a, s) => a + s.sales, 0);
-  const totalRevenue = staff.reduce((a, s) => a + s.totalRevenue, 0);
-  const activeCount = staff.filter((s) => s.active).length;
+  const totalCA = staff.reduce((s, v) => s + v.stats.caGenere, 0);
 
-  const handleAdd = () => {
-    if (!form.name) return toast.error("Le nom est obligatoire");
-    if (!form.email) return toast.error("L'email est obligatoire");
-    if (!form.password || form.password.length < 6)
-      return toast.error("Mot de passe minimum 6 caractères");
-    setStaff((prev) => [
-      ...prev,
-      {
-        ...form,
-        id: Date.now(),
-        sales: 0,
-        commission: "0 €",
-        totalRevenue: 0,
-        orders: [],
-        active: true,
+  const toggleActive = (id) => {
+    setStaff((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, active: !v.active } : v))
+    );
+    const v = staff.find((v) => v.id === id);
+    toast(
+      v.active ? `Accès de ${v.name} désactivé` : `Accès de ${v.name} réactivé`,
+      { icon: v.active ? "🔒" : "🔓" }
+    );
+  };
+
+  const savePerm = (id, key, val) => {
+    setStaff((prev) =>
+      prev.map((v) =>
+        v.id === id
+          ? { ...v, permissions: { ...v.permissions, [key]: val } }
+          : v
+      )
+    );
+  };
+
+  const handleCreate = () => {
+    if (!form.name || !form.email || !form.password)
+      return toast.error("Nom, email et mot de passe requis");
+    const newV = {
+      id: Date.now(),
+      ...form,
+      avatar: form.name.charAt(0).toUpperCase(),
+      avatarColor: ["#C9A96E", "#3B82F6", "#10B981", "#8B5CF6"][
+        Math.floor(Math.random() * 4)
+      ],
+      active: true,
+      stats: {
+        commandes: 0,
+        caGenere: 0,
+        tempsMoyen: 0,
+        noteMoyenne: 0,
+        tauxAcceptation: 100,
       },
-    ]);
-    toast.success(`Sous-compte créé pour ${form.name}`);
+      historique: [],
+    };
+    setStaff((prev) => [...prev, newV]);
+    toast.success(`Compte créé pour ${form.name} — Email envoyé`, {
+      icon: "✅",
+    });
     setShowModal(false);
     setForm(EMPTY_FORM);
   };
 
-  const toggleActive = (id) => {
-    setStaff((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-    );
-    const member = staff.find((s) => s.id === id);
-    toast.success(
-      `Accès ${member.active ? "désactivé" : "activé"} pour ${member.name}`
-    );
-  };
-
-  const savePerms = (id, newPerms) => {
-    setStaff((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, permissions: newPerms } : s))
-    );
-    setShowPerms(null);
-    toast.success("Permissions mises à jour");
-  };
-
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
+          alignItems: "flex-end",
+          marginBottom: "40px",
         }}
       >
         <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--gray)",
+              marginBottom: "8px",
+            }}
+          >
+            Équipe
+          </div>
           <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "36px",
-              fontWeight: "400",
+              fontSize: "44px",
+              fontWeight: "300",
+              lineHeight: 1.1,
             }}
           >
-            Gestion de l'équipe
+            Vendeurs
           </h1>
           <p
-            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}
+            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "6px" }}
           >
-            Sous-comptes vendeurs avec accès personnalisés
+            {staff.filter((v) => v.active).length} actif
+            {staff.filter((v) => v.active).length > 1 ? "s" : ""} ·{" "}
+            {staff.length} au total
           </p>
         </div>
         <button
           className="btn-gold"
+          style={{ fontSize: "12px", padding: "12px 22px" }}
           onClick={() => {
-            setShowModal(true);
             setForm(EMPTY_FORM);
+            setShowModal(true);
           }}
         >
-          + Créer un sous-compte
+          + Nouveau vendeur
         </button>
       </div>
 
-      {/* STATS */}
+      {/* STATS GLOBALES ÉQUIPE */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: "16px",
-          marginBottom: "28px",
+          gridTemplateColumns: "repeat(4,1fr)",
+          gap: "1px",
+          background: "rgba(0,0,0,0.07)",
+          marginBottom: "36px",
+          borderRadius: "2px",
+          overflow: "hidden",
         }}
       >
         {[
           {
-            label: "Vendeurs actifs",
-            value: activeCount,
-            icon: "👥",
-            bg: "var(--success-bg)",
-            color: "var(--success)",
+            label: "CA total équipe",
+            value: `${totalCA.toLocaleString("fr-FR")} €`,
+            sub: "sur la période",
           },
           {
-            label: "Ventes totales (mois)",
-            value: totalSales,
-            icon: "📦",
-            bg: "var(--info-bg)",
-            color: "var(--info)",
+            label: "Commandes traitées",
+            value: staff.reduce((s, v) => s + v.stats.commandes, 0),
+            sub: "au total",
           },
           {
-            label: "CA traité",
-            value: `${totalRevenue.toLocaleString("fr-FR")} €`,
-            icon: "💰",
-            bg: "var(--gold-light)",
-            color: "var(--gold-dark)",
+            label: "Temps moyen prépa",
+            value: `${Math.round(
+              staff
+                .filter((v) => v.active)
+                .reduce((s, v) => s + v.stats.tempsMoyen, 0) /
+                Math.max(1, staff.filter((v) => v.active).length)
+            )} min`,
+            sub: "par commande",
+          },
+          {
+            label: "Note moyenne équipe",
+            value: `${(
+              staff.reduce((s, v) => s + v.stats.noteMoyenne, 0) / staff.length
+            ).toFixed(1)} ★`,
+            sub: "satisfaction client",
           },
         ].map((s) => (
-          <div key={s.label} className="stat-card">
+          <div
+            key={s.label}
+            style={{ background: "#fff", padding: "24px 28px" }}
+          >
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "8px",
+                fontSize: "10px",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: "#aaa",
+                marginBottom: "14px",
               }}
             >
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "var(--gray)",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {s.label}
-              </span>
-              <span
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "8px",
-                  background: s.bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "13px",
-                }}
-              >
-                {s.icon}
-              </span>
+              {s.label}
             </div>
             <div
               style={{
-                fontSize: "32px",
                 fontFamily: "var(--font-display)",
+                fontSize: "36px",
+                fontWeight: "300",
                 color: "var(--noir)",
+                lineHeight: 1,
+                marginBottom: "8px",
               }}
             >
               {s.value}
             </div>
+            <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+              {s.sub}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* CARTES VENDEURS */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-          gap: "20px",
+          gridTemplateColumns: selected ? "1fr 380px" : "1fr",
+          gap: "24px",
         }}
       >
-        {staff.map((member) => (
-          <div
-            key={member.id}
-            className="card"
-            style={{
-              position: "relative",
-              opacity: member.active ? 1 : 0.6,
-              transition: "var(--transition)",
-            }}
-          >
-            {/* Barre top */}
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: member.active
-                  ? "linear-gradient(90deg, var(--gold), var(--gold-light))"
-                  : "#ddd",
-                borderRadius: "18px 18px 0 0",
-              }}
-            />
-
-            {/* Header carte */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                marginBottom: "16px",
-                marginTop: "8px",
-              }}
-            >
+        {/* LISTE VENDEURS */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {staff.map((v) => {
+            const isSelected = selected?.id === v.id;
+            return (
               <div
+                key={v.id}
+                onClick={() => setSelected(isSelected ? null : v)}
                 style={{
-                  width: "48px",
-                  height: "48px",
-                  background: member.active
-                    ? "var(--gold)"
-                    : "var(--gray-light)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  flexShrink: 0,
+                  background: "#fff",
+                  borderRadius: "14px",
+                  padding: "20px 24px",
+                  border: `1.5px solid ${
+                    isSelected ? "var(--gold)" : "rgba(0,0,0,0.07)"
+                  }`,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: isSelected
+                    ? "0 4px 20px rgba(201,169,110,0.15)"
+                    : "0 1px 4px rgba(0,0,0,0.04)",
+                  opacity: v.active ? 1 : 0.6,
                 }}
               >
-                {member.name.charAt(0)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: "700", fontSize: "16px" }}>
-                  {member.name}
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--gray)" }}>
-                  {member.role}
-                </div>
                 <div
                   style={{
-                    fontSize: "11px",
-                    color: "var(--gray-light)",
-                    marginTop: "1px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    gap: "16px",
+                    alignItems: "flex-start",
+                    marginBottom: "18px",
                   }}
                 >
-                  {member.email}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  padding: "3px 10px",
-                  borderRadius: "20px",
-                  background: member.active
-                    ? "var(--success-bg)"
-                    : "rgba(0,0,0,0.06)",
-                  color: member.active ? "var(--success)" : "var(--gray)",
-                  flexShrink: 0,
-                }}
-              >
-                {member.active ? "Actif" : "Inactif"}
-              </span>
-            </div>
-
-            {/* Stats */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "12px 0",
-                borderTop: "1px solid #f5f5f5",
-                borderBottom: "1px solid #f5f5f5",
-                marginBottom: "14px",
-              }}
-            >
-              {[
-                { label: "Ventes", value: member.sales },
-                { label: "Prime", value: member.commission },
-                {
-                  label: "CA traité",
-                  value: `${member.totalRevenue.toLocaleString("fr-FR")} €`,
-                },
-              ].map((s, i) => (
-                <div
-                  key={s.label}
-                  style={{
-                    textAlign: "center",
-                    flex: 1,
-                    borderLeft: i > 0 ? "1px solid #f5f5f5" : "none",
-                  }}
-                >
+                  {/* Avatar */}
                   <div
                     style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      background: `${v.avatarColor}20`,
+                      border: `2px solid ${v.avatarColor}40`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "20px",
+                      fontWeight: "500",
+                      color: v.avatarColor,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {v.avatar}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: "700",
+                            fontSize: "16px",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          {v.name}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+                          {v.role} · {v.email}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => toggleActive(v.id)}
+                          style={{
+                            width: "38px",
+                            height: "21px",
+                            borderRadius: "11px",
+                            border: "none",
+                            cursor: "pointer",
+                            background: v.active ? "var(--gold)" : "#E5E7EB",
+                            position: "relative",
+                            transition: "background 0.3s",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "15px",
+                              height: "15px",
+                              borderRadius: "50%",
+                              background: "#fff",
+                              position: "absolute",
+                              top: "3px",
+                              left: v.active ? "20px" : "3px",
+                              transition:
+                                "left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                            }}
+                          />
+                        </button>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: v.active ? "var(--success)" : "var(--gray)",
+                          }}
+                        >
+                          {v.active ? "Actif" : "Inactif"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats rapides */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(5,1fr)",
+                    gap: "12px",
+                  }}
+                >
+                  {[
+                    { label: "Commandes", value: v.stats.commandes, unit: "" },
+                    {
+                      label: "CA généré",
+                      value: `${v.stats.caGenere.toLocaleString("fr-FR")}€`,
+                      unit: "",
+                    },
+                    {
+                      label: "Temps moyen",
+                      value: `${v.stats.tempsMoyen} min`,
+                      unit: "",
+                    },
+                    {
+                      label: "Note client",
+                      value: `${v.stats.noteMoyenne} ★`,
+                      unit: "",
+                    },
+                    {
+                      label: "Acceptation",
+                      value: `${v.stats.tauxAcceptation}%`,
+                      unit: "",
+                    },
+                  ].map((s) => (
+                    <div key={s.label}>
+                      <div
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          color: "#bbb",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {s.label}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: "18px",
+                          fontWeight: "400",
+                          color: "var(--noir)",
+                        }}
+                      >
+                        {s.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Barre CA par rapport au top */}
+                <div style={{ marginTop: "14px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
                       fontSize: "10px",
                       color: "var(--gray)",
-                      textTransform: "uppercase",
                       marginBottom: "4px",
                     }}
                   >
-                    {s.label}
+                    <span>Part du CA équipe</span>
+                    <span>
+                      {Math.round((v.stats.caGenere / totalCA) * 100)}%
+                    </span>
                   </div>
-                  <div
+                  <PercentBar
+                    value={v.stats.caGenere}
+                    max={totalCA}
+                    color={v.avatarColor}
+                  />
+                </div>
+
+                {/* Permissions résumé */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "6px",
+                    marginTop: "14px",
+                    flexWrap: "wrap",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {PERMISSIONS.map((p) => (
+                    <span
+                      key={p.key}
+                      style={{
+                        padding: "3px 10px",
+                        borderRadius: "20px",
+                        fontSize: "10px",
+                        fontWeight: "600",
+                        background: v.permissions[p.key]
+                          ? "rgba(201,169,110,0.1)"
+                          : "rgba(0,0,0,0.04)",
+                        color: v.permissions[p.key]
+                          ? "var(--gold-dark)"
+                          : "var(--gray)",
+                        border: v.permissions[p.key]
+                          ? "1px solid rgba(201,169,110,0.25)"
+                          : "1px solid transparent",
+                      }}
+                    >
+                      {p.label}
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => setShowPerms(v.id)}
                     style={{
-                      fontWeight: "700",
-                      fontSize: i === 0 ? "20px" : "14px",
-                      fontFamily: i === 0 ? "var(--font-display)" : "inherit",
-                      color: i === 1 ? "var(--success)" : "inherit",
+                      padding: "3px 10px",
+                      borderRadius: "20px",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                      background: "transparent",
+                      border: "1px dashed rgba(0,0,0,0.15)",
+                      color: "var(--gray)",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
                     }}
                   >
-                    {s.value}
-                  </div>
+                    Modifier
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            );
+          })}
+        </div>
 
-            {/* Permissions preview */}
-            <div style={{ marginBottom: "14px" }}>
+        {/* DÉTAIL VENDEUR */}
+        {selected &&
+          (() => {
+            const v = staff.find((s) => s.id === selected.id) || selected;
+            return (
               <div
+                className="card"
                 style={{
-                  fontSize: "10px",
-                  color: "var(--gray)",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  marginBottom: "8px",
-                }}
-              >
-                Accès activés
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {PERMISSIONS.map(
-                  (p) =>
-                    member.permissions[p.key] && (
-                      <span
-                        key={p.key}
-                        style={{
-                          fontSize: "11px",
-                          padding: "3px 8px",
-                          borderRadius: "20px",
-                          background: "rgba(201,169,110,0.1)",
-                          color: "var(--gold-dark)",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {p.icon} {p.label}
-                      </span>
-                    )
-                )}
-                {!Object.values(member.permissions).some(Boolean) && (
-                  <span style={{ fontSize: "11px", color: "var(--gray)" }}>
-                    Aucun accès activé
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Barre progression */}
-            <div style={{ marginBottom: "14px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "10px",
-                  color: "var(--gray)",
-                  marginBottom: "4px",
-                }}
-              >
-                <span>Objectif mensuel</span>
-                <span>{member.sales}/50</span>
-              </div>
-              <div
-                style={{
-                  height: "5px",
-                  background: "#F0EDE6",
-                  borderRadius: "3px",
+                  position: "sticky",
+                  top: "20px",
+                  height: "fit-content",
+                  maxHeight: "calc(100vh-120px)",
+                  overflowY: "auto",
                 }}
               >
                 <div
                   style={{
-                    height: "100%",
-                    width: `${Math.min(100, (member.sales / 50) * 100)}%`,
-                    background:
-                      member.sales >= 40
-                        ? "var(--success)"
-                        : member.sales >= 20
-                        ? "var(--gold)"
-                        : "var(--gray-light)",
-                    borderRadius: "3px",
-                    transition: "width 0.5s",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "24px",
                   }}
-                />
-              </div>
-            </div>
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        borderRadius: "50%",
+                        background: `${v.avatarColor}20`,
+                        border: `2px solid ${v.avatarColor}40`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "22px",
+                        color: v.avatarColor,
+                      }}
+                    >
+                      {v.avatar}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "700", fontSize: "16px" }}>
+                        {v.name}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+                        {v.role}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelected(null)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "18px",
+                      color: "var(--gray)",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button
-                className="btn-outline"
-                style={{ flex: 1, fontSize: "11px", padding: "7px 10px" }}
-                onClick={() => setShowDetail(member)}
-              >
-                Historique
-              </button>
-              <button
-                className="btn-outline"
-                style={{ flex: 1, fontSize: "11px", padding: "7px 10px" }}
-                onClick={() => setShowPerms({ ...member })}
-              >
-                ⚙️ Permissions
-              </button>
-              <button
-                style={{
-                  flex: 1,
-                  fontSize: "11px",
-                  padding: "7px 10px",
-                  borderRadius: "var(--radius-md)",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-body)",
-                  fontWeight: "500",
-                  background: member.active
-                    ? "var(--error-bg)"
-                    : "var(--success-bg)",
-                  color: member.active ? "var(--error)" : "var(--success)",
-                  transition: "var(--transition)",
-                }}
-                onClick={() => toggleActive(member.id)}
-              >
-                {member.active ? "Désactiver" : "Activer"}
-              </button>
-            </div>
-          </div>
-        ))}
+                {/* Métriques détaillées */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  {[
+                    {
+                      label: "Commandes traitées",
+                      value: v.stats.commandes,
+                      color: v.avatarColor,
+                    },
+                    {
+                      label: "CA généré",
+                      value: `${v.stats.caGenere.toLocaleString("fr-FR")} €`,
+                      color: v.avatarColor,
+                    },
+                    {
+                      label: "Temps moyen prépa",
+                      value: `${v.stats.tempsMoyen} min`,
+                      color: v.tempsMoyen > 15 ? "#EF4444" : "#10B981",
+                    },
+                    {
+                      label: "Taux d'acceptation",
+                      value: `${v.stats.tauxAcceptation}%`,
+                      color:
+                        v.stats.tauxAcceptation >= 95 ? "#10B981" : "#F59E0B",
+                    },
+                  ].map((m) => (
+                    <div
+                      key={m.label}
+                      style={{
+                        padding: "14px",
+                        background: "#F8F7F4",
+                        borderRadius: "10px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "var(--gray)",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        {m.label}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: "24px",
+                          fontWeight: "300",
+                          color: m.color,
+                        }}
+                      >
+                        {m.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Note client avec étoiles */}
+                <div
+                  style={{
+                    padding: "14px",
+                    background: "rgba(201,169,110,0.06)",
+                    borderRadius: "10px",
+                    marginBottom: "20px",
+                    display: "flex",
+                    gap: "12px",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "36px",
+                      fontWeight: "300",
+                      color: "#F59E0B",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {v.stats.noteMoyenne}
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "2px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <span
+                          key={i}
+                          style={{
+                            color:
+                              i <= Math.round(v.stats.noteMoyenne)
+                                ? "#F59E0B"
+                                : "#E5E7EB",
+                            fontSize: "16px",
+                          }}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--gray)" }}>
+                      Note satisfaction client
+                    </div>
+                  </div>
+                </div>
+
+                {/* Historique activité */}
+                <div style={{ marginBottom: "16px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "var(--gray)",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    Activité récente
+                  </div>
+                  {v.historique.map((h, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        alignItems: "flex-start",
+                        padding: "10px 0",
+                        borderBottom:
+                          i < v.historique.length - 1
+                            ? "1px solid rgba(0,0,0,0.05)"
+                            : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "6px",
+                          height: "6px",
+                          borderRadius: "50%",
+                          background: "var(--gold)",
+                          flexShrink: 0,
+                          marginTop: "5px",
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "13px", fontWeight: "500" }}>
+                          {h.action}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--gray)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {h.date} · {h.montant.toLocaleString("fr-FR")} €
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className="btn-outline"
+                  style={{ width: "100%", fontSize: "12px" }}
+                  onClick={() => setShowPerms(v.id)}
+                >
+                  Modifier les permissions
+                </button>
+              </div>
+            );
+          })()}
       </div>
 
-      {/* ── MODAL CRÉER SOUS-COMPTE ── */}
+      {/* MODAL CRÉER VENDEUR */}
       {showModal && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.65)",
+            background: "rgba(0,0,0,0.6)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "20px",
           }}
           onClick={() => setShowModal(false)}
         >
@@ -572,55 +903,52 @@ export default function Vendors() {
               borderRadius: "20px",
               padding: "32px",
               width: "100%",
-              maxWidth: "520px",
-              maxHeight: "90vh",
-              overflowY: "auto",
+              maxWidth: "480px",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               style={{
                 fontSize: "11px",
+                color: "var(--gold)",
                 fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
-                color: "var(--gold)",
                 marginBottom: "6px",
               }}
             >
-              Nouveau sous-compte
+              Nouveau vendeur
             </div>
             <h3
               style={{
                 fontFamily: "var(--font-display)",
                 fontSize: "26px",
                 fontWeight: "400",
-                marginBottom: "24px",
+                marginBottom: "20px",
               }}
             >
-              Créer un accès vendeur
+              Créer un accès
             </h3>
-
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "14px",
-                marginBottom: "24px",
+                gap: "12px",
+                marginBottom: "20px",
               }}
             >
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
                 <div>
                   <label className="label">Nom complet *</label>
                   <input
                     className="input-field"
-                    placeholder="Ex: Fatima Z."
+                    placeholder="Prénom Nom"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     style={{ marginBottom: 0 }}
@@ -641,31 +969,32 @@ export default function Vendors() {
                 </div>
               </div>
               <div>
-                <label className="label">Email de connexion *</label>
+                <label className="label">Email *</label>
                 <input
                   className="input-field"
-                  placeholder="vendeur@boutique.fr"
                   type="email"
+                  placeholder="prenom@boutique.fr"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   style={{ marginBottom: 0 }}
                 />
               </div>
               <div>
-                <label className="label">Mot de passe *</label>
+                <label className="label">Mot de passe temporaire *</label>
                 <div style={{ position: "relative" }}>
                   <input
                     className="input-field"
-                    placeholder="Minimum 6 caractères"
-                    type={showPassword ? "text" : "password"}
+                    type={showPwd ? "text" : "password"}
+                    placeholder="Min. 8 caractères"
                     value={form.password}
                     onChange={(e) =>
                       setForm({ ...form, password: e.target.value })
                     }
-                    style={{ marginBottom: 0, paddingRight: "40px" }}
+                    style={{ marginBottom: 0, paddingRight: "60px" }}
                   />
                   <button
-                    onClick={() => setShowPassword(!showPassword)}
+                    type="button"
+                    onClick={() => setShowPwd(!showPwd)}
                     style={{
                       position: "absolute",
                       right: "12px",
@@ -673,120 +1002,112 @@ export default function Vendors() {
                       transform: "translateY(-50%)",
                       background: "none",
                       border: "none",
-                      cursor: "pointer",
+                      fontSize: "11px",
                       color: "var(--gray)",
-                      fontSize: "13px",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
                     }}
                   >
-                    {showPassword ? "🙈" : "👁️"}
+                    {showPwd ? "Masquer" : "Voir"}
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Permissions */}
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: "800",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                color: "var(--gray)",
-                marginBottom: "14px",
-              }}
-            >
-              Accès au dashboard
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                marginBottom: "24px",
-              }}
-            >
-              {PERMISSIONS.map((p) => (
+              <div>
+                <label className="label" style={{ marginBottom: "8px" }}>
+                  Permissions
+                </label>
                 <div
-                  key={p.key}
-                  onClick={() =>
-                    setForm((f) => ({
-                      ...f,
-                      permissions: {
-                        ...f.permissions,
-                        [p.key]: !f.permissions[p.key],
-                      },
-                    }))
-                  }
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: `1.5px solid ${
-                      form.permissions[p.key]
-                        ? "var(--gold)"
-                        : "rgba(0,0,0,0.07)"
-                    }`,
-                    background: form.permissions[p.key]
-                      ? "rgba(201,169,110,0.05)"
-                      : "#FAFAF8",
-                    cursor: "pointer",
-                    transition: "var(--transition)",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "6px",
                   }}
                 >
-                  <span style={{ fontSize: "18px" }}>{p.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "600", fontSize: "13px" }}>
-                      {p.label}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                      {p.desc}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      borderRadius: "50%",
-                      border: `2px solid ${
-                        form.permissions[p.key]
-                          ? "var(--gold)"
-                          : "rgba(0,0,0,0.15)"
-                      }`,
-                      background: form.permissions[p.key]
-                        ? "var(--gold)"
-                        : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "var(--transition)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {form.permissions[p.key] && (
-                      <span
+                  {PERMISSIONS.map((p) => (
+                    <div
+                      key={p.key}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          permissions: {
+                            ...f.permissions,
+                            [p.key]: !f.permissions[p.key],
+                          },
+                        }))
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        border: `1px solid ${
+                          form.permissions[p.key]
+                            ? "var(--gold)"
+                            : "rgba(0,0,0,0.08)"
+                        }`,
+                        background: form.permissions[p.key]
+                          ? "rgba(201,169,110,0.06)"
+                          : "transparent",
+                      }}
+                    >
+                      <div
                         style={{
-                          color: "var(--noir)",
-                          fontSize: "11px",
-                          fontWeight: "800",
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "4px",
+                          border: `2px solid ${
+                            form.permissions[p.key]
+                              ? "var(--gold)"
+                              : "rgba(0,0,0,0.2)"
+                          }`,
+                          background: form.permissions[p.key]
+                            ? "var(--gold)"
+                            : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 0.15s",
                         }}
                       >
-                        ✓
+                        {form.permissions[p.key] && (
+                          <span
+                            style={{
+                              color: "#fff",
+                              fontSize: "9px",
+                              fontWeight: "900",
+                            }}
+                          >
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          color: form.permissions[p.key]
+                            ? "var(--gold-dark)"
+                            : "var(--gray)",
+                        }}
+                      >
+                        {p.label}
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 className="btn-gold"
                 style={{ flex: 2 }}
-                onClick={handleAdd}
+                onClick={handleCreate}
               >
-                Créer le sous-compte
+                Créer le compte
               </button>
               <button
                 className="btn-outline"
@@ -800,336 +1121,141 @@ export default function Vendors() {
         </div>
       )}
 
-      {/* ── MODAL PERMISSIONS ── */}
-      {showPerms && (
-        <PermissionsModal
-          member={showPerms}
-          onSave={(perms) => savePerms(showPerms.id, perms)}
-          onClose={() => setShowPerms(null)}
-        />
-      )}
-
-      {/* ── MODAL HISTORIQUE ── */}
-      {showDetail && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.65)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onClick={() => setShowDetail(null)}
-        >
-          <div
-            className="card"
-            style={{
-              background: "#fff",
-              borderRadius: "20px",
-              padding: "30px",
-              width: "100%",
-              maxWidth: "460px",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+      {/* MODAL PERMISSIONS */}
+      {showPerms !== null &&
+        (() => {
+          const v = staff.find((s) => s.id === showPerms);
+          if (!v) return null;
+          return (
             <div
               style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.6)",
+                zIndex: 1000,
                 display: "flex",
                 alignItems: "center",
-                gap: "14px",
-                marginBottom: "20px",
+                justifyContent: "center",
               }}
+              onClick={() => setShowPerms(null)}
             >
               <div
+                className="card"
                 style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  background: "var(--gold)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: "18px",
-                  fontWeight: "700",
+                  background: "#fff",
+                  borderRadius: "20px",
+                  padding: "32px",
+                  width: "100%",
+                  maxWidth: "440px",
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                {showDetail.name.charAt(0)}
-              </div>
-              <div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--gold)",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Permissions
+                </div>
                 <h3
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "22px",
+                    fontSize: "24px",
+                    fontWeight: "400",
+                    marginBottom: "20px",
                   }}
                 >
-                  {showDetail.name}
+                  {v.name}
                 </h3>
-                <div style={{ fontSize: "13px", color: "var(--gray)" }}>
-                  {showDetail.role} · {showDetail.email}
-                </div>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
-                marginBottom: "20px",
-              }}
-            >
-              {[
-                { label: "Ventes", value: showDetail.sales },
-                { label: "Prime", value: showDetail.commission },
-                {
-                  label: "CA traité",
-                  value: `${showDetail.totalRevenue.toLocaleString("fr-FR")} €`,
-                },
-                {
-                  label: "Accès",
-                  value: `${
-                    Object.values(showDetail.permissions).filter(Boolean).length
-                  }/${PERMISSIONS.length}`,
-                },
-              ].map((info) => (
                 <div
-                  key={info.label}
                   style={{
-                    background: "#F8F7F4",
-                    borderRadius: "10px",
-                    padding: "12px 14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    marginBottom: "20px",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--gray)",
-                      textTransform: "uppercase",
-                      fontWeight: "700",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {info.label}
-                  </div>
-                  <div style={{ fontWeight: "700", fontSize: "16px" }}>
-                    {info.value}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: "800",
-                color: "var(--gray)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                marginBottom: "10px",
-              }}
-            >
-              Commandes traitées
-            </div>
-            {showDetail.orders.length > 0 ? (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-              >
-                {showDetail.orders.map((ordId) => (
-                  <div
-                    key={ordId}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 14px",
-                      background: "#F8F7F4",
-                      borderRadius: "8px",
-                    }}
-                  >
-                    <span
+                  {PERMISSIONS.map((p) => (
+                    <div
+                      key={p.key}
                       style={{
-                        fontFamily: "monospace",
-                        fontWeight: "700",
-                        fontSize: "13px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "12px 14px",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(0,0,0,0.07)",
+                        background: "#FAFAF8",
                       }}
                     >
-                      #{ordId}
-                    </span>
-                    <span className="badge badge-success">Traitée</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "20px",
-                  color: "var(--gray)",
-                  fontSize: "13px",
-                }}
-              >
-                Aucune commande assignée
-              </div>
-            )}
-            <button
-              className="btn-outline"
-              style={{ width: "100%", marginTop: "20px" }}
-              onClick={() => setShowDetail(null)}
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PermissionsModal({ member, onSave, onClose }) {
-  const [perms, setPerms] = useState({ ...member.permissions });
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.65)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="card"
-        style={{
-          background: "#fff",
-          borderRadius: "20px",
-          padding: "32px",
-          width: "100%",
-          maxWidth: "480px",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          style={{
-            fontSize: "11px",
-            fontWeight: "700",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "var(--gold)",
-            marginBottom: "6px",
-          }}
-        >
-          Gestion des accès
-        </div>
-        <h3
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "24px",
-            fontWeight: "400",
-            marginBottom: "4px",
-          }}
-        >
-          {member.name}
-        </h3>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--gray)",
-            marginBottom: "24px",
-          }}
-        >
-          {member.role} · {member.email}
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            marginBottom: "24px",
-          }}
-        >
-          {PERMISSIONS.map((p) => (
-            <div
-              key={p.key}
-              onClick={() =>
-                setPerms((prev) => ({ ...prev, [p.key]: !prev[p.key] }))
-              }
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                border: `1.5px solid ${
-                  perms[p.key] ? "var(--gold)" : "rgba(0,0,0,0.07)"
-                }`,
-                background: perms[p.key] ? "rgba(201,169,110,0.05)" : "#FAFAF8",
-                cursor: "pointer",
-                transition: "var(--transition)",
-              }}
-            >
-              <span style={{ fontSize: "18px" }}>{p.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: "600", fontSize: "13px" }}>
-                  {p.label}
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: "600" }}>
+                          {p.icon} {p.label}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--gray)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {p.desc}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() =>
+                          savePerm(v.id, p.key, !v.permissions[p.key])
+                        }
+                        style={{
+                          width: "40px",
+                          height: "22px",
+                          borderRadius: "11px",
+                          border: "none",
+                          cursor: "pointer",
+                          background: v.permissions[p.key]
+                            ? "var(--gold)"
+                            : "#E5E7EB",
+                          position: "relative",
+                          transition: "background 0.3s",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            borderRadius: "50%",
+                            background: "#fff",
+                            position: "absolute",
+                            top: "3px",
+                            left: v.permissions[p.key] ? "21px" : "3px",
+                            transition: "left 0.3s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                          }}
+                        />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                  {p.desc}
-                </div>
-              </div>
-              <div
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "50%",
-                  border: `2px solid ${
-                    perms[p.key] ? "var(--gold)" : "rgba(0,0,0,0.15)"
-                  }`,
-                  background: perms[p.key] ? "var(--gold)" : "transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "var(--transition)",
-                  flexShrink: 0,
-                }}
-              >
-                {perms[p.key] && (
-                  <span
-                    style={{
-                      color: "var(--noir)",
-                      fontSize: "11px",
-                      fontWeight: "800",
-                    }}
-                  >
-                    ✓
-                  </span>
-                )}
+                <button
+                  className="btn-gold"
+                  style={{ width: "100%" }}
+                  onClick={() => {
+                    toast.success("Permissions mises à jour");
+                    setShowPerms(null);
+                  }}
+                >
+                  Enregistrer
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            className="btn-gold"
-            style={{ flex: 2 }}
-            onClick={() => onSave(perms)}
-          >
-            Enregistrer les accès
-          </button>
-          <button className="btn-outline" style={{ flex: 1 }} onClick={onClose}>
-            Annuler
-          </button>
-        </div>
-      </div>
+          );
+        })()}
     </div>
   );
 }

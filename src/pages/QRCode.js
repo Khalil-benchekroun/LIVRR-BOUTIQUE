@@ -182,7 +182,7 @@ export default function QRCodePage() {
   const totalRupture = products.filter((p) => p.stock === 0).length;
 
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       <div
         style={{
           display: "flex",

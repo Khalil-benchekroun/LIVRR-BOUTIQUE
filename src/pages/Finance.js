@@ -407,7 +407,7 @@ export default function Finance() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       {/* HEADER */}
       <div
         style={{

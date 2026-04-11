@@ -238,22 +238,35 @@ export default function Clients() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{ padding: "44px 52px" }}>
       {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "28px",
+          alignItems: "flex-end",
+          marginBottom: "40px",
         }}
       >
         <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--gray)",
+              marginBottom: "8px",
+            }}
+          >
+            Clientèle
+          </div>
           <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "36px",
-              fontWeight: "400",
+              fontSize: "44px",
+              fontWeight: "300",
+              lineHeight: 1.1,
             }}
           >
             Clients
