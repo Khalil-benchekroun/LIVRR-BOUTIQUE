@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { RevealText, RippleButton } from "../components/LuxeAnimations";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -87,24 +88,26 @@ export default function Login() {
 
         {/* Titre */}
         <div style={{ marginBottom: "40px" }}>
-          <h1
+          <RevealText
+            text="Connexion"
+            tag="h1"
             style={{
-              fontFamily: "var(--font-display)",
               fontSize: "40px",
               fontWeight: "300",
               color: "#fff",
-              lineHeight: 1.1,
-              marginBottom: "10px",
               letterSpacing: "-0.01em",
+              marginBottom: "10px",
             }}
-          >
-            Connexion
-          </h1>
+            delay={100}
+            stagger={150}
+          />
           <p
+            className="letter-fade"
             style={{
               fontSize: "14px",
               color: "rgba(255,255,255,0.35)",
               lineHeight: 1.6,
+              animationDelay: "400ms",
             }}
           >
             Accédez à votre tableau de bord boutique LIVRR.
@@ -244,31 +247,25 @@ export default function Login() {
           </div>
 
           {/* Submit */}
-          <button
+          <RippleButton
             type="submit"
             disabled={loading}
             style={{
+              width: "100%",
               padding: "15px",
               borderRadius: "8px",
               background: loading ? "rgba(201,169,110,0.5)" : "var(--gold)",
               color: "var(--noir)",
-              border: "none",
               fontSize: "13px",
               fontWeight: "700",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               cursor: loading ? "wait" : "pointer",
-              fontFamily: "var(--font-body)",
-              transition: "all 0.2s",
               marginTop: "4px",
             }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.opacity = "0.9";
-            }}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             {loading ? "Connexion en cours…" : "Se connecter"}
-          </button>
+          </RippleButton>
         </form>
 
         {/* Lien inscription */}

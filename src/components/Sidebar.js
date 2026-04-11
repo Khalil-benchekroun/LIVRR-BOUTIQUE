@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { LivrrLogo } from "./LuxeAnimations";
 import { useAuth } from "../context/AuthContext";
-import { useNotifications } from "./useNotifications";
 
 const menuGroups = [
   {
@@ -306,19 +306,13 @@ export default function Sidebar() {
                 "linear-gradient(90deg, transparent, var(--gold), transparent)",
             }}
           />
-          <h1
+          <LivrrLogo
             style={{
-              fontFamily: "var(--font-display)",
-              color: "var(--gold)",
-              fontSize: "30px",
-              letterSpacing: "5px",
-              fontWeight: "400",
-              margin: 0,
-              textShadow: "0 0 30px rgba(201,169,110,0.3)",
+              fontSize: "28px",
+              letterSpacing: "6px",
+              textShadow: "0 0 30px rgba(201,169,110,0.2)",
             }}
-          >
-            LIVRR
-          </h1>
+          />
           <div
             style={{
               fontSize: "8px",

@@ -29,6 +29,7 @@ import QRCodePage from "./pages/QRCode";
 import Services from "./pages/Services";
 import Finance from "./pages/Finance";
 import Support from "./pages/Support";
+import GlobalSearch from "./components/GlobalSearch";
 import Livraisons from "./pages/Livraisons";
 import Avis from "./pages/Avis";
 import Calendrier from "./pages/Calendrier";
