@@ -28,6 +28,7 @@ import QRCodePage from "./pages/QRCode";
 import Services from "./pages/Services";
 import Finance from "./pages/Finance";
 import Support from "./pages/Support";
+import Tutorial from "./pages/Tutorial";
 import Livraisons from "./pages/Livraisons";
 import Avis from "./pages/Avis";
 import Calendrier from "./pages/Calendrier";
@@ -318,6 +319,14 @@ export default function App() {
                   <AppLayout>
                     <Calendrier />
                   </AppLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/tutorial"
+              element={
+                <PrivateRoute>
+                  <Tutorial />
                 </PrivateRoute>
               }
             />

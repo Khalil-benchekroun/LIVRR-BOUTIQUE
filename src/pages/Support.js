@@ -112,6 +112,53 @@ export default function Support() {
         </p>
       </div>
 
+      {/* Bannière tutoriel */}
+      <div
+        style={{
+          marginBottom: "20px",
+          padding: "16px 20px",
+          background: "var(--noir)",
+          borderRadius: "14px",
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+          border: "1px solid rgba(201,169,110,0.2)",
+        }}
+      >
+        <div style={{ fontSize: "32px", flexShrink: 0 }}>🎓</div>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontWeight: "700",
+              fontSize: "14px",
+              color: "#fff",
+              marginBottom: "3px",
+            }}
+          >
+            Tutoriel interactif LIVRR
+          </div>
+          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>
+            Découvrez toutes les fonctionnalités en moins de 3 minutes
+          </div>
+        </div>
+        <a
+          href="/tutorial"
+          style={{
+            padding: "10px 20px",
+            borderRadius: "8px",
+            background: "var(--gold)",
+            color: "var(--noir)",
+            fontSize: "12px",
+            fontWeight: "700",
+            textDecoration: "none",
+            flexShrink: 0,
+            letterSpacing: "0.04em",
+          }}
+        >
+          Lancer le tutoriel →
+        </a>
+      </div>
+
       {/* Contacts rapides */}
       <div
         style={{

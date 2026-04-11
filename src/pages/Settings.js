@@ -1142,6 +1142,294 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* ── PARAMÉTRAGE OPÉRATIONNEL (CDC) ── */}
+      <div
+        style={{
+          marginTop: "24px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "20px",
+        }}
+      >
+        {/* ZONES DESSERVIES */}
+        <div className="card">
+          <h3
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "22px",
+              fontWeight: "400",
+              marginBottom: "6px",
+            }}
+          >
+            Zones desservies
+          </h3>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--gray)",
+              marginBottom: "18px",
+              lineHeight: 1.6,
+            }}
+          >
+            Définissez les quartiers ou arrondissements que vous pouvez livrer.
+            LIVRR optimise les coursiers selon ces zones.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            {[
+              "8e arrondissement",
+              "16e arrondissement",
+              "1er arrondissement",
+              "Madeleine",
+              "Champs-Élysées",
+            ].map((zone) => (
+              <div
+                key={zone}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  borderRadius: "20px",
+                  background: "rgba(201,169,110,0.08)",
+                  border: "1px solid rgba(201,169,110,0.25)",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "var(--gold-dark)",
+                }}
+              >
+                {zone}
+                <span
+                  style={{ cursor: "pointer", opacity: 0.6, fontSize: "10px" }}
+                  onClick={() => toast(`Zone "${zone}" supprimée`)}
+                >
+                  ✕
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              className="input-field"
+              placeholder="Ajouter un quartier ou arrondissement..."
+              style={{ marginBottom: 0, flex: 1 }}
+            />
+            <button
+              className="btn-gold"
+              style={{ fontSize: "12px", padding: "0 16px", flexShrink: 0 }}
+              onClick={() => toast("Zone ajoutée")}
+            >
+              Ajouter
+            </button>
+          </div>
+        </div>
+
+        {/* DÉLAIS DE PRÉPARATION */}
+        <div className="card">
+          <h3
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "22px",
+              fontWeight: "400",
+              marginBottom: "6px",
+            }}
+          >
+            Délais de préparation
+          </h3>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--gray)",
+              marginBottom: "18px",
+              lineHeight: 1.6,
+            }}
+          >
+            Indiquez le temps moyen pour préparer une commande. LIVRR calcule le
+            délai total de livraison en ajoutant ce temps au trajet coursier.
+          </p>
+          {[
+            { label: "Commande standard (1–3 articles)", key: "standard" },
+            { label: "Commande volumineuse (4+ articles)", key: "large" },
+            { label: "Service sur-mesure / essayage", key: "custom" },
+          ].map((d) => (
+            <div
+              key={d.key}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "10px 0",
+                borderBottom: "1px solid rgba(0,0,0,0.05)",
+              }}
+            >
+              <span style={{ flex: 1, fontSize: "13px" }}>{d.label}</span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  flexShrink: 0,
+                }}
+              >
+                <input
+                  type="number"
+                  defaultValue={
+                    d.key === "standard" ? 10 : d.key === "large" ? 20 : 30
+                  }
+                  min={5}
+                  max={60}
+                  step={5}
+                  style={{
+                    width: "60px",
+                    padding: "6px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-body)",
+                    textAlign: "center",
+                  }}
+                />
+                <span style={{ fontSize: "12px", color: "var(--gray)" }}>
+                  min
+                </span>
+              </div>
+            </div>
+          ))}
+          <button
+            className="btn-outline"
+            style={{ width: "100%", marginTop: "14px", fontSize: "12px" }}
+            onClick={() => toast.success("Délais sauvegardés")}
+          >
+            Enregistrer les délais
+          </button>
+        </div>
+      </div>
+
+      {/* COORDONNÉES BANCAIRES */}
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "20px",
+          }}
+        >
+          <div>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "22px",
+                fontWeight: "400",
+                marginBottom: "4px",
+              }}
+            >
+              Coordonnées bancaires
+            </h3>
+            <p style={{ fontSize: "12px", color: "var(--gray)" }}>
+              Informations de versement des fonds après délai PSP (14 jours)
+            </p>
+          </div>
+          <span
+            style={{
+              padding: "4px 12px",
+              background: "var(--success-bg)",
+              color: "var(--success)",
+              borderRadius: "20px",
+              fontSize: "10px",
+              fontWeight: "700",
+            }}
+          >
+            🔒 Chiffré
+          </span>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "14px",
+          }}
+        >
+          <div>
+            <label className="label">Titulaire du compte</label>
+            <input
+              className="input-field"
+              placeholder="Nom complet ou raison sociale"
+              defaultValue="Sandro Paris SAS"
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div>
+            <label className="label">BIC / SWIFT</label>
+            <input
+              className="input-field"
+              placeholder="Ex: BNPAFRPPXXX"
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div style={{ gridColumn: "1/-1" }}>
+            <label className="label">IBAN</label>
+            <input
+              className="input-field"
+              placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
+              style={{
+                marginBottom: 0,
+                letterSpacing: "0.05em",
+                fontFamily: "monospace",
+              }}
+            />
+          </div>
+          <div>
+            <label className="label">Banque</label>
+            <input
+              className="input-field"
+              placeholder="Ex: BNP Paribas"
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div>
+            <label className="label">Préférences de versement</label>
+            <select className="input-field" style={{ marginBottom: 0 }}>
+              <option>Automatique dès disponibilité</option>
+              <option>Hebdomadaire (chaque lundi)</option>
+              <option>Mensuel (1er du mois)</option>
+            </select>
+          </div>
+        </div>
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "12px 16px",
+            background: "var(--info-bg)",
+            borderRadius: "8px",
+            fontSize: "12px",
+            color: "var(--info)",
+            lineHeight: 1.6,
+          }}
+        >
+          📋 Les coordonnées bancaires sont utilisées exclusivement pour les
+          versements LIVRR. Toute modification est soumise à validation par
+          notre équipe sous 48h.
+        </div>
+        <button
+          className="btn-gold"
+          style={{ marginTop: "14px", fontSize: "12px" }}
+          onClick={() =>
+            toast.success(
+              "Coordonnées bancaires sauvegardées — Vérification en cours"
+            )
+          }
+        >
+          Enregistrer les coordonnées
+        </button>
+      </div>
+
       {/* PSP — délai de versement */}
       <div style={{ marginTop: "24px" }}>
         <div

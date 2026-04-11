@@ -1,6 +1,15 @@
 import React, { useState, useRef } from "react";
 import toast from "react-hot-toast";
 
+// ── Quotas par abonnement (CDC) ───────────────────────────────────
+const ABONNEMENT_QUOTAS = {
+  classic: { label: "Classic", quota: 30, color: "#6B7280" },
+  signature: { label: "Signature", quota: 100, color: "#3B82F6" },
+  prestige: { label: "Prestige", quota: 300, color: "#C9A96E" },
+};
+// Abonnement courant (sera branché Supabase)
+const CURRENT_ABONNEMENT = "classic";
+
 // --- CONFIGURATION DES CATÉGORIES LIVRR ---
 const CATEGORIES = [
   "Vêtements",
@@ -73,6 +82,10 @@ export default function Products() {
   const [filterCat, setFilterCat] = useState("all");
 
   const fileInputRef = useRef(null);
+  const abonnement = ABONNEMENT_QUOTAS[CURRENT_ABONNEMENT];
+  const quota = abonnement.quota;
+  const isQuotaAtteint = products.length >= quota;
+  const isQuotaProche = products.length >= quota * 0.9;
 
   // --- GESTION DES CHAMPS DU FORMULAIRE ---
   const handleChange = (key) => (e) => {
@@ -143,6 +156,13 @@ export default function Products() {
   const handleSave = () => {
     if (!form.name || !form.price)
       return toast.error("Le nom et le prix sont obligatoires");
+    // Blocage quota CDC
+    if (!editProduct && products.length >= quota) {
+      return toast.error(
+        `Quota atteint — Votre abonnement ${abonnement.label} est limité à ${quota} produits. Passez à l'offre supérieure depuis les Paramètres.`,
+        { duration: 6000, icon: "🔒" }
+      );
+    }
 
     const formattedProduct = {
       ...form,
@@ -188,9 +208,26 @@ export default function Products() {
         })
         .filter((p) => p !== null && p.name);
 
-      setProducts((prev) => [...newItems, ...prev]);
+      const slotsRestants = quota - products.length;
+      const produitsFiltres = newItems.slice(0, Math.max(0, slotsRestants));
+      if (produitsFiltres.length === 0) {
+        toast.error(
+          `Quota atteint — Aucun produit importé. Passez à l'offre supérieure.`,
+          { duration: 5000, icon: "🔒" }
+        );
+        return;
+      }
+      if (produitsFiltres.length < newItems.length) {
+        toast.error(
+          `Quota partiel — ${
+            newItems.length - produitsFiltres.length
+          } produit(s) ignoré(s) : quota ${abonnement.label} atteint.`,
+          { duration: 5000 }
+        );
+      }
+      setProducts((prev) => [...produitsFiltres, ...prev]);
       toast.success(
-        `${newItems.length} produits importés. Pensez à ajouter les photos !`
+        `${produitsFiltres.length} produits importés. Pensez à ajouter les photos !`
       );
     };
     reader.readAsText(file);
@@ -228,6 +265,103 @@ export default function Products() {
             style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}
           >
             Gestion de l'inventaire — {products.length} références
+            {/* Barre quota */}
+            <div style={{ marginTop: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "4px",
+                }}
+              >
+                <span style={{ fontSize: "11px", color: "var(--gray)" }}>
+                  Quota abonnement {abonnement.label} :&nbsp;
+                  <strong
+                    style={{
+                      color: isQuotaAtteint
+                        ? "var(--error)"
+                        : isQuotaProche
+                        ? "var(--warning)"
+                        : "var(--success)",
+                    }}
+                  >
+                    {products.length}/{quota}
+                  </strong>
+                </span>
+                {isQuotaAtteint && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      color: "var(--error)",
+                      background: "var(--error-bg)",
+                      padding: "2px 8px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    🔒 Quota atteint
+                  </span>
+                )}
+                {isQuotaProche && !isQuotaAtteint && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      color: "var(--warning)",
+                      background: "var(--warning-bg)",
+                      padding: "2px 8px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    ⚠ Quota bientôt atteint
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  height: "4px",
+                  background: "rgba(0,0,0,0.06)",
+                  borderRadius: "2px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(100, (products.length / quota) * 100)}%`,
+                    background: isQuotaAtteint
+                      ? "var(--error)"
+                      : isQuotaProche
+                      ? "var(--warning)"
+                      : "var(--success)",
+                    borderRadius: "2px",
+                    transition: "width 0.4s ease",
+                  }}
+                />
+              </div>
+              {isQuotaAtteint && (
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--error)",
+                    marginTop: "6px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Vous avez atteint la limite de votre offre {abonnement.label}.
+                  Pour ajouter plus de produits, passez à l'offre Signature (100
+                  produits) ou Prestige (300 produits) depuis les{" "}
+                  <a
+                    href="/parametres"
+                    style={{ color: "var(--gold)", fontWeight: "600" }}
+                  >
+                    Paramètres
+                  </a>
+                  .
+                </p>
+              )}
+            </div>
           </p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>

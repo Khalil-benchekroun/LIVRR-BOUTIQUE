@@ -1,390 +1,500 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [focused, setFocused] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 60);
-    return () => clearTimeout(t);
-  }, []);
-
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    if (!email || !password)
+      return toast.error("Veuillez remplir tous les champs");
     setLoading(true);
-    await login(email, password);
-    navigate("/");
-    setLoading(false);
+    try {
+      await login(email, password);
+      toast.success("Bienvenue sur votre espace boutique", {
+        style: {
+          fontFamily: "DM Sans, sans-serif",
+          background: "#0A0A0F",
+          color: "#fff",
+          border: "1px solid rgba(201,169,110,0.3)",
+        },
+        icon: "✦",
+      });
+      navigate("/");
+    } catch (err) {
+      toast.error("Identifiants incorrects");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes loginBg {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes loginCardIn {
-          from { opacity: 0; transform: translateY(32px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0)  scale(1);    }
-        }
-        @keyframes logoIn {
-          from { opacity: 0; transform: translateY(-20px) letterSpacing: 20px; }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes goldLine {
-          from { width: 0; opacity: 0; }
-          to   { width: 60px; opacity: 1; }
-        }
-        @keyframes particleFloat {
-          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-          50%       { transform: translateY(-20px) rotate(180deg); opacity: 0.7; }
-        }
-        .login-input {
-          width: 100%;
-          padding: 14px 18px;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px;
-          font-size: 15px;
-          color: #fff;
-          outline: none;
-          transition: all 0.3s ease;
-          font-family: var(--font-body);
-          letter-spacing: 0.02em;
-        }
-        .login-input:focus {
-          border-color: var(--gold);
-          background: rgba(201,169,110,0.08);
-          box-shadow: 0 0 0 3px rgba(201,169,110,0.12), 0 8px 32px rgba(0,0,0,0.3);
-        }
-        .login-input::placeholder { color: rgba(255,255,255,0.25); }
-        .login-input:autofill,
-        .login-input:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 1000px rgba(15,15,26,0.9) inset;
-          -webkit-text-fill-color: #fff;
-        }
-        .submit-btn {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-          color: var(--noir);
-          border: none;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          cursor: pointer;
-          font-family: var(--font-body);
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-        }
-        .submit-btn::before {
-          content: '';
-          position: absolute;
-          top: 0; left: -100%;
-          width: 100%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transition: left 0.5s ease;
-        }
-        .submit-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 40px rgba(201,169,110,0.4);
-        }
-        .submit-btn:hover:not(:disabled)::before { left: 100%; }
-        .submit-btn:active:not(:disabled) { transform: translateY(0); }
-        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-      `}</style>
-
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        fontFamily: "var(--font-body)",
+        background: "#0A0A0F",
+        overflow: "hidden",
+      }}
+    >
+      {/* ── GAUCHE : formulaire ── */}
       <div
         style={{
-          minHeight: "100vh",
-          background:
-            "linear-gradient(135deg, #0A0A0F 0%, #0F0F1A 40%, #12121A 60%, #0A0A0F 100%)",
+          width: "480px",
+          flexShrink: 0,
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
           justifyContent: "center",
-          padding: "24px",
+          padding: "60px 56px",
           position: "relative",
-          overflow: "hidden",
+          zIndex: 1,
         }}
       >
-        {/* Particules décoratives */}
-        {[...Array(6)].map((_, i) => (
+        {/* Logo */}
+        <div style={{ marginBottom: "56px" }}>
           <div
-            key={i}
             style={{
-              position: "absolute",
-              width: `${4 + i * 2}px`,
-              height: `${4 + i * 2}px`,
-              borderRadius: "50%",
-              background: "var(--gold)",
-              opacity: 0.15,
-              top: `${10 + i * 15}%`,
-              left: `${5 + i * 16}%`,
-              animation: `particleFloat ${3 + i * 0.8}s ease-in-out ${
-                i * 0.4
-              }s infinite`,
+              fontFamily: "var(--font-display)",
+              color: "var(--gold)",
+              fontSize: "28px",
+              letterSpacing: "6px",
+              fontWeight: "400",
+              marginBottom: "6px",
             }}
-          />
-        ))}
+          >
+            LIVRR
+          </div>
+          <div
+            style={{
+              fontSize: "9px",
+              color: "rgba(255,255,255,0.25)",
+              letterSpacing: "3px",
+              textTransform: "uppercase",
+            }}
+          >
+            Espace Boutique
+          </div>
+        </div>
 
-        {/* Ligne horizontale décorative */}
+        {/* Titre */}
+        <div style={{ marginBottom: "40px" }}>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "40px",
+              fontWeight: "300",
+              color: "#fff",
+              lineHeight: 1.1,
+              marginBottom: "10px",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Connexion
+          </h1>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "rgba(255,255,255,0.35)",
+              lineHeight: 1.6,
+            }}
+          >
+            Accédez à votre tableau de bord boutique LIVRR.
+          </p>
+        </div>
+
+        {/* Formulaire */}
+        <form
+          onSubmit={handleLogin}
+          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+        >
+          {/* Email */}
+          <div>
+            <label
+              style={{
+                fontSize: "10px",
+                fontWeight: "700",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.3)",
+                display: "block",
+                marginBottom: "8px",
+              }}
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setFocused("email")}
+              onBlur={() => setFocused(null)}
+              placeholder="boutique@livrr.fr"
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: "8px",
+                border: `1px solid ${
+                  focused === "email"
+                    ? "rgba(201,169,110,0.6)"
+                    : "rgba(255,255,255,0.08)"
+                }`,
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff",
+                fontSize: "14px",
+                outline: "none",
+                fontFamily: "var(--font-body)",
+                transition: "all 0.2s",
+                boxShadow:
+                  focused === "email"
+                    ? "0 0 0 3px rgba(201,169,110,0.08)"
+                    : "none",
+              }}
+            />
+          </div>
+
+          {/* Mot de passe */}
+          <div>
+            <label
+              style={{
+                fontSize: "10px",
+                fontWeight: "700",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.3)",
+                display: "block",
+                marginBottom: "8px",
+              }}
+            >
+              Mot de passe
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocused("password")}
+                onBlur={() => setFocused(null)}
+                placeholder="••••••••"
+                style={{
+                  width: "100%",
+                  padding: "14px 44px 14px 16px",
+                  borderRadius: "8px",
+                  border: `1px solid ${
+                    focused === "password"
+                      ? "rgba(201,169,110,0.6)"
+                      : "rgba(255,255,255,0.08)"
+                  }`,
+                  background: "rgba(255,255,255,0.04)",
+                  color: "#fff",
+                  fontSize: "14px",
+                  outline: "none",
+                  fontFamily: "var(--font-body)",
+                  transition: "all 0.2s",
+                  boxShadow:
+                    focused === "password"
+                      ? "0 0 0 3px rgba(201,169,110,0.08)"
+                      : "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: "14px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.3)",
+                  fontSize: "13px",
+                }}
+              >
+                {showPassword ? "Masquer" : "Voir"}
+              </button>
+            </div>
+          </div>
+
+          {/* Mot de passe oublié */}
+          <div style={{ textAlign: "right" }}>
+            <button
+              type="button"
+              style={{
+                fontSize: "12px",
+                color: "rgba(201,169,110,0.6)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              Mot de passe oublié ?
+            </button>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: "15px",
+              borderRadius: "8px",
+              background: loading ? "rgba(201,169,110,0.5)" : "var(--gold)",
+              color: "var(--noir)",
+              border: "none",
+              fontSize: "13px",
+              fontWeight: "700",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              cursor: loading ? "wait" : "pointer",
+              fontFamily: "var(--font-body)",
+              transition: "all 0.2s",
+              marginTop: "4px",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            {loading ? "Connexion en cours…" : "Se connecter"}
+          </button>
+        </form>
+
+        {/* Lien inscription */}
+        <div style={{ marginTop: "32px", textAlign: "center" }}>
+          <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.25)" }}>
+            Pas encore partenaire ?{" "}
+          </span>
+          <a
+            href="/inscription"
+            style={{
+              fontSize: "13px",
+              color: "var(--gold)",
+              fontWeight: "600",
+              textDecoration: "none",
+            }}
+          >
+            Rejoindre LIVRR →
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "32px",
+            left: "56px",
+            right: "56px",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "11px",
+              color: "rgba(255,255,255,0.15)",
+              lineHeight: 1.6,
+            }}
+          >
+            Plateforme réservée aux boutiques partenaires LIVRR.
+            <br />
+            Livraison luxe en moins d'une heure à Paris.
+          </p>
+        </div>
+      </div>
+
+      {/* ── DROITE : visuel luxe ── */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+        {/* Fond gradient */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(135deg, #0F0F1A 0%, #1A1208 50%, #0A0A0F 100%)",
+          }}
+        />
+
+        {/* Motif géométrique décoratif */}
+        <svg
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            opacity: 0.06,
+          }}
+          viewBox="0 0 600 800"
+        >
+          <defs>
+            <pattern
+              id="grid"
+              width="60"
+              height="60"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 60 0 L 0 0 0 60"
+                fill="none"
+                stroke="#C9A96E"
+                strokeWidth="0.5"
+              />
+            </pattern>
+          </defs>
+          <rect width="600" height="800" fill="url(#grid)" />
+          <circle
+            cx="300"
+            cy="400"
+            r="200"
+            fill="none"
+            stroke="#C9A96E"
+            strokeWidth="0.5"
+          />
+          <circle
+            cx="300"
+            cy="400"
+            r="300"
+            fill="none"
+            stroke="#C9A96E"
+            strokeWidth="0.5"
+          />
+        </svg>
+
+        {/* Halo doré central */}
         <div
           style={{
             position: "absolute",
             top: "50%",
-            left: 0,
-            right: 0,
-            height: "1px",
+            left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: "400px",
+            height: "400px",
+            borderRadius: "50%",
             background:
-              "linear-gradient(90deg, transparent, rgba(201,169,110,0.08), transparent)",
-            pointerEvents: "none",
+              "radial-gradient(circle, rgba(201,169,110,0.08) 0%, transparent 70%)",
           }}
         />
 
+        {/* Contenu central */}
         <div
           style={{
-            width: "100%",
-            maxWidth: "440px",
-            animation: mounted
-              ? "loginCardIn 0.7s cubic-bezier(0.34,1.2,0.64,1) forwards"
-              : "none",
-            opacity: mounted ? 1 : 0,
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "60px",
           }}
         >
-          {/* LOGO */}
-          <div style={{ textAlign: "center", marginBottom: "44px" }}>
+          {/* Citation */}
+          <div style={{ textAlign: "center", maxWidth: "380px" }}>
             <div
               style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "48px",
-                fontWeight: "400",
-                color: "var(--white)",
-                letterSpacing: "10px",
-                marginBottom: "6px",
-                textShadow: "0 0 60px rgba(201,169,110,0.25)",
-              }}
-            >
-              LIVRR
-            </div>
-            {/* Ligne dorée sous le logo */}
-            <div
-              style={{
+                width: "40px",
                 height: "1px",
-                background:
-                  "linear-gradient(90deg, transparent, var(--gold), transparent)",
-                margin: "12px auto",
-                animation: mounted ? "goldLine 1s 0.4s ease forwards" : "none",
-                width: mounted ? "80px" : "0",
-                opacity: mounted ? 1 : 0,
-                transition: "width 1s ease, opacity 1s ease",
+                background: "rgba(201,169,110,0.4)",
+                margin: "0 auto 32px",
               }}
             />
-            <div
-              style={{
-                fontSize: "10px",
-                color: "rgba(201,169,110,0.6)",
-                textTransform: "uppercase",
-                letterSpacing: "4px",
-                fontWeight: "500",
-              }}
-            >
-              Espace Boutique
-            </div>
-          </div>
-
-          {/* CARTE */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              borderRadius: "24px",
-              padding: "44px",
-              border: "1px solid rgba(255,255,255,0.07)",
-              backdropFilter: "blur(20px)",
-              boxShadow:
-                "0 40px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {/* Reflet haut de carte */}
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: "10%",
-                right: "10%",
-                height: "1px",
-                background:
-                  "linear-gradient(90deg, transparent, rgba(201,169,110,0.4), transparent)",
-              }}
-            />
-
-            <h2
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "30px",
-                color: "var(--white)",
-                fontWeight: "300",
-                marginBottom: "32px",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Connexion
-            </h2>
-
-            <form
-              onSubmit={handleSubmit}
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-            >
-              {/* Email */}
-              <div>
-                <label
-                  style={{
-                    fontSize: "11px",
-                    color:
-                      focused === "email"
-                        ? "var(--gold)"
-                        : "rgba(255,255,255,0.35)",
-                    display: "block",
-                    marginBottom: "8px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontWeight: "600",
-                    transition: "color 0.2s ease",
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  className="login-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setFocused("email")}
-                  onBlur={() => setFocused("")}
-                  placeholder="votre@boutique.fr"
-                  required
-                />
-              </div>
-
-              {/* Mot de passe */}
-              <div>
-                <label
-                  style={{
-                    fontSize: "11px",
-                    color:
-                      focused === "password"
-                        ? "var(--gold)"
-                        : "rgba(255,255,255,0.35)",
-                    display: "block",
-                    marginBottom: "8px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontWeight: "600",
-                    transition: "color 0.2s ease",
-                  }}
-                >
-                  Mot de passe
-                </label>
-                <input
-                  className="login-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocused("password")}
-                  onBlur={() => setFocused("")}
-                  placeholder="••••••••••"
-                  required
-                />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                className="submit-btn"
-                disabled={loading}
-                style={{ marginTop: "8px" }}
-              >
-                {loading ? (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        border: "2px solid rgba(0,0,0,0.2)",
-                        borderTopColor: "var(--noir)",
-                        borderRadius: "50%",
-                        display: "inline-block",
-                        animation: "spin 0.7s linear infinite",
-                      }}
-                    />
-                    Connexion en cours…
-                  </span>
-                ) : (
-                  "Se connecter →"
-                )}
-              </button>
-            </form>
-
-            {/* Lien inscription */}
             <p
               style={{
-                textAlign: "center",
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.28)",
-                marginTop: "28px",
-                lineHeight: "1.5",
+                fontFamily: "var(--font-display)",
+                fontSize: "28px",
+                fontWeight: "300",
+                color: "rgba(255,255,255,0.7)",
+                lineHeight: 1.6,
+                fontStyle: "italic",
+                marginBottom: "24px",
               }}
             >
-              Pas encore partenaire ?{" "}
-              <Link
-                to="/inscription"
-                style={{
-                  color: "var(--gold)",
-                  fontWeight: "500",
-                  transition: "opacity 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-              >
-                Rejoindre LIVRR
-              </Link>
+              « Le luxe, c'est la précision. Chaque minute compte. »
             </p>
+            <div
+              style={{
+                width: "40px",
+                height: "1px",
+                background: "rgba(201,169,110,0.4)",
+                margin: "0 auto 32px",
+              }}
+            />
+            <div
+              style={{
+                fontSize: "11px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "rgba(201,169,110,0.5)",
+              }}
+            >
+              LIVRR · Paris
+            </div>
           </div>
 
-          {/* Note démo */}
-          <p
+          {/* Stats en bas */}
+          <div
             style={{
-              textAlign: "center",
-              fontSize: "11px",
-              color: "rgba(255,255,255,0.15)",
-              marginTop: "24px",
-              letterSpacing: "0.03em",
+              position: "absolute",
+              bottom: "52px",
+              display: "flex",
+              gap: "48px",
             }}
           >
-            💡 Mode démo — entrez n'importe quel email / mot de passe
-          </p>
+            {[
+              { value: "< 1h", label: "Délai de livraison" },
+              { value: "20%", label: "Commission unique" },
+              { value: "24/7", label: "Support boutique" },
+            ].map((s) => (
+              <div key={s.label} style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "28px",
+                    fontWeight: "300",
+                    color: "var(--gold)",
+                    lineHeight: 1,
+                  }}
+                >
+                  {s.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "rgba(255,255,255,0.25)",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    marginTop: "6px",
+                  }}
+                >
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Séparateur vertical */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "10%",
+            bottom: "10%",
+            width: "1px",
+            background:
+              "linear-gradient(180deg, transparent, rgba(201,169,110,0.2), transparent)",
+          }}
+        />
       </div>
-    </>
+    </div>
   );
 }
