@@ -1,42 +1,128 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
+const now = () =>
+  new Date().toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+const today = new Date().toLocaleDateString("fr-FR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
 const INITIAL_ORDERS = [
   {
     id: "ORD-8821",
     customer: "Sarah B.",
-    items: [{ name: "Robe Midi Fleurie", size: "M", qty: 1, price: 490 }],
     total: 490,
     status: "new",
     time: "Il y a 5 min",
     address: "Anfa Park, Résidence les Palmiers, Casablanca",
     deliverySlot: "18h - 19h",
     assignedVendor: null,
+    items: [{ name: "Robe Midi Fleurie", size: "M", qty: 1, price: 490 }],
+    historique: [
+      { statut: "Nouvelle", acteur: "Système", heure: "14:12", date: today },
+    ],
   },
   {
     id: "ORD-8815",
     customer: "Karim T.",
-    items: [
-      { name: "Trench Camel", size: "L", qty: 1, price: 890 },
-      { name: "Chapeau Panama", size: "Unique", qty: 1, price: 189 },
-    ],
     total: 1079,
     status: "preparing",
     time: "Il y a 25 min",
     address: "Quartier Gauthier, Rue Mozart, Casablanca",
     deliverySlot: "Dès que possible",
     assignedVendor: "Siham B.",
+    items: [
+      { name: "Trench Camel", size: "L", qty: 1, price: 890 },
+      { name: "Chapeau Panama", size: "Unique", qty: 1, price: 189 },
+    ],
+    historique: [
+      { statut: "Nouvelle", acteur: "Système", heure: "13:50", date: today },
+      { statut: "Acceptée", acteur: "Siham B.", heure: "13:52", date: today },
+      {
+        statut: "En préparation",
+        acteur: "Siham B.",
+        heure: "13:53",
+        date: today,
+      },
+    ],
   },
   {
     id: "ORD-8790",
     customer: "Yasmine M.",
-    items: [{ name: "Blazer Structuré", size: "S", qty: 1, price: 295 }],
     total: 295,
     status: "ready",
     time: "Il y a 1h",
     address: "Bouskoura, Ville Verte, Casablanca",
     deliverySlot: "Prévu 19h30",
     assignedVendor: "Youssef L.",
+    items: [{ name: "Blazer Structuré", size: "S", qty: 1, price: 295 }],
+    historique: [
+      { statut: "Nouvelle", acteur: "Système", heure: "13:10", date: today },
+      { statut: "Acceptée", acteur: "Youssef L.", heure: "13:12", date: today },
+      {
+        statut: "En préparation",
+        acteur: "Youssef L.",
+        heure: "13:12",
+        date: today,
+      },
+      { statut: "Prête", acteur: "Youssef L.", heure: "13:45", date: today },
+    ],
+  },
+  {
+    id: "ORD-8770",
+    customer: "Mehdi S.",
+    total: 680,
+    status: "delivered",
+    time: "Il y a 2h",
+    address: "Maarif, Bd Zerktouni, Casablanca",
+    deliverySlot: "Livré à 13h02",
+    assignedVendor: "Amine R.",
+    items: [{ name: "Parfum Oud 50ml", size: "Unique", qty: 2, price: 340 }],
+    historique: [
+      { statut: "Nouvelle", acteur: "Système", heure: "12:00", date: today },
+      { statut: "Acceptée", acteur: "Amine R.", heure: "12:02", date: today },
+      {
+        statut: "En préparation",
+        acteur: "Amine R.",
+        heure: "12:02",
+        date: today,
+      },
+      { statut: "Prête", acteur: "Amine R.", heure: "12:20", date: today },
+      {
+        statut: "Prise en charge",
+        acteur: "Coursier",
+        heure: "12:30",
+        date: today,
+      },
+      { statut: "Livrée", acteur: "Coursier", heure: "13:02", date: today },
+    ],
+  },
+  {
+    id: "ORD-8755",
+    customer: "Fatima Z.",
+    total: 195,
+    status: "refused",
+    time: "Il y a 3h",
+    address: "Hay Hassani, Casablanca",
+    deliverySlot: "—",
+    assignedVendor: null,
+    items: [{ name: "Sérum Éclat", size: "30ml", qty: 1, price: 195 }],
+    motifRefus: "Produit en rupture de stock au moment de la commande",
+    historique: [
+      { statut: "Nouvelle", acteur: "Système", heure: "11:30", date: today },
+      {
+        statut: "Refusée",
+        acteur: "Siham B.",
+        heure: "11:33",
+        date: today,
+        motif: "Produit en rupture de stock au moment de la commande",
+      },
+    ],
   },
 ];
 
@@ -48,833 +134,1239 @@ const INITIAL_STAFF = [
 
 const STATUS_CONFIG = {
   new: {
-    label: "À Valider",
+    label: "Nouvelle",
     bg: "#FFFBEB",
     color: "#B45309",
-    border: "#FEF3C7",
     dot: "#F59E0B",
+    step: 1,
+  },
+  accepted: {
+    label: "Acceptée",
+    bg: "#EFF6FF",
+    color: "#1D4ED8",
+    dot: "#3B82F6",
+    step: 2,
   },
   preparing: {
     label: "En préparation",
-    bg: "#EFF6FF",
-    color: "#1D4ED8",
-    border: "#DBEAFE",
-    dot: "#3B82F6",
+    bg: "#EEF2FF",
+    color: "#4338CA",
+    dot: "#6366F1",
+    step: 3,
   },
   ready: {
     label: "Prête",
     bg: "#F0FDF4",
     color: "#15803D",
-    border: "#DCFCE7",
     dot: "#22C55E",
+    step: 4,
+  },
+  taken: {
+    label: "Prise en charge",
+    bg: "#FFF7ED",
+    color: "#C2410C",
+    dot: "#F97316",
+    step: 5,
+  },
+  delivered: {
+    label: "Livrée",
+    bg: "#F0FDF4",
+    color: "#15803D",
+    dot: "#22C55E",
+    step: 6,
+  },
+  refused: {
+    label: "Refusée",
+    bg: "#FEF2F2",
+    color: "#DC2626",
+    dot: "#EF4444",
+    step: 0,
+  },
+  cancelled: {
+    label: "Annulée",
+    bg: "#F9FAFB",
+    color: "#6B7280",
+    dot: "#9CA3AF",
+    step: 0,
   },
 };
 
 const FILTERS = [
   { id: "all", label: "Toutes" },
   { id: "new", label: "Nouvelles" },
-  { id: "preparing", label: "En cours" },
+  { id: "preparing", label: "En préparation" },
   { id: "ready", label: "Prêtes" },
+  { id: "delivered", label: "Livrées" },
+  { id: "refused", label: "Refusées" },
 ];
+
+const MOTIFS_REFUS = [
+  "Produit en rupture de stock",
+  "Produit endommagé / non conforme",
+  "Commande hors zone de livraison",
+  "Délai de livraison impossible",
+  "Erreur de prix ou de produit",
+  "Autre (préciser)",
+];
+
+const STEPS_LIST = [
+  { key: "new", label: "Nouvelle", step: 1 },
+  { key: "accepted", label: "Acceptée", step: 2 },
+  { key: "preparing", label: "Prépa", step: 3 },
+  { key: "ready", label: "Prête", step: 4 },
+  { key: "taken", label: "En route", step: 5 },
+  { key: "delivered", label: "Livrée", step: 6 },
+];
+
+function OrderStepper({ status }) {
+  const isTerminal = ["refused", "cancelled"].includes(status);
+  const cfg = STATUS_CONFIG[status];
+  const currentStep = cfg?.step || 0;
+
+  if (isTerminal) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "8px 12px",
+          background: cfg.bg,
+          borderRadius: "8px",
+          border: `1px solid ${cfg.dot}33`,
+        }}
+      >
+        <div
+          style={{
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            background: cfg.dot,
+          }}
+        />
+        <span style={{ fontSize: "12px", fontWeight: "700", color: cfg.color }}>
+          {cfg.label}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {STEPS_LIST.map((s, i) => {
+        const done = s.step < currentStep;
+        const current = s.step === currentStep;
+        return (
+          <React.Fragment key={s.key}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "3px",
+              }}
+            >
+              <div
+                style={{
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: done
+                    ? "#22C55E"
+                    : current
+                    ? "var(--gold)"
+                    : "rgba(0,0,0,0.06)",
+                  border: `2px solid ${
+                    done
+                      ? "#22C55E"
+                      : current
+                      ? "var(--gold)"
+                      : "rgba(0,0,0,0.1)"
+                  }`,
+                  fontSize: "9px",
+                  fontWeight: "800",
+                  color: done || current ? "#fff" : "rgba(0,0,0,0.3)",
+                  transition: "all 0.3s",
+                }}
+              >
+                {done ? "✓" : s.step}
+              </div>
+              <span
+                style={{
+                  fontSize: "8px",
+                  fontWeight: "600",
+                  color: done || current ? "var(--noir)" : "var(--gray)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {s.label}
+              </span>
+            </div>
+            {i < STEPS_LIST.length - 1 && (
+              <div
+                style={{
+                  width: "18px",
+                  height: "2px",
+                  background:
+                    s.step < currentStep ? "#22C55E" : "rgba(0,0,0,0.08)",
+                  marginBottom: "14px",
+                  transition: "background 0.3s",
+                }}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function Historique({ items }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {items.map((h, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: "10px",
+            paddingBottom: i < items.length - 1 ? "10px" : "0",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: i === 0 ? "var(--gold)" : "rgba(0,0,0,0.15)",
+                marginTop: "3px",
+                flexShrink: 0,
+              }}
+            />
+            {i < items.length - 1 && (
+              <div
+                style={{
+                  width: "1px",
+                  flex: 1,
+                  background: "rgba(0,0,0,0.07)",
+                  minHeight: "16px",
+                }}
+              />
+            )}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "12px", fontWeight: "700" }}>
+                {h.statut}
+              </span>
+              <span style={{ fontSize: "10px", color: "var(--gray)" }}>
+                {h.heure}
+              </span>
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--gray)" }}>
+              par {h.acteur}
+            </div>
+            {h.motif && (
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "var(--error)",
+                  fontStyle: "italic",
+                  marginTop: "2px",
+                }}
+              >
+                Motif : {h.motif}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Orders() {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
-  const [staff, setStaff] = useState(INITIAL_STAFF);
   const [filter, setFilter] = useState("all");
-  const [showVendorModal, setShowVendorModal] = useState(false);
-  const [pendingOrderId, setPendingOrderId] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [pendingAcceptId, setPendingAcceptId] = useState(null);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
 
-  const handleAcceptClick = (orderId) => {
-    setPendingOrderId(orderId);
-    setSelectedVendorId(null);
-    setShowVendorModal(true);
-  };
+  const [showRefusModal, setShowRefusModal] = useState(false);
+  const [pendingRefusId, setPendingRefusId] = useState(null);
+  const [motifRefus, setMotifRefus] = useState("");
+  const [motifCustom, setMotifCustom] = useState("");
 
-  const handleConfirmVendor = () => {
-    if (!selectedVendorId)
-      return toast.error("Veuillez sélectionner un vendeur");
-    const vendor = staff.find((s) => s.id === selectedVendorId);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [pendingCancelId, setPendingCancelId] = useState(null);
+  const [motifCancel, setMotifCancel] = useState("");
+
+  const addHisto = (id, statut, acteur, motif = null) => {
+    const entry = { statut, acteur, heure: now(), date: today };
+    if (motif) entry.motif = motif;
     setOrders((prev) =>
       prev.map((o) =>
-        o.id === pendingOrderId
-          ? { ...o, status: "preparing", assignedVendor: vendor.name }
-          : o
+        o.id === id ? { ...o, historique: [...(o.historique || []), entry] } : o
       )
     );
-    setStaff((prev) =>
-      prev.map((s) =>
-        s.id === selectedVendorId ? { ...s, sales: s.sales + 1 } : s
-      )
-    );
-    toast.success(`Assignée à ${vendor.name} — Préparation lancée !`);
-    setShowVendorModal(false);
   };
 
-  const updateStatus = (id, newStatus) => {
+  const transition = (id, newStatus, extra = {}) => {
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
+      prev.map((o) => (o.id === id ? { ...o, status: newStatus, ...extra } : o))
     );
-    if (newStatus === "ready")
-      toast.success("Colis prêt ! Signal envoyé au coursier LIVRR.");
+    if (selectedOrder?.id === id)
+      setSelectedOrder((prev) => ({ ...prev, status: newStatus, ...extra }));
   };
 
-  const printLabel = (order) => {
-    // Génère un QR code via API publique qrserver.com
-    const qrData = encodeURIComponent(`https://livrr.fr/track/${order.id}`);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`;
-    const w = window.open("", "_blank");
-    w.document.write(`<!DOCTYPE html><html><head><title>LIVRR — Étiquette #${
-      order.id
-    }</title>
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Helvetica, sans-serif; padding: 0; background: #fff; }
-      @media print { body { width: 100mm; } }
-      .label {
-        width: 100mm; padding: 16px; border: 2px solid #000;
-        display: flex; flex-direction: column; gap: 10px;
-      }
-      .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-      .logo { font-size: 22px; font-weight: 900; letter-spacing: 4px; }
-      .order-id { font-size: 13px; font-weight: 700; color: #555; }
-      .qr-section { display: flex; gap: 12px; align-items: flex-start; }
-      .qr-img { width: 90px; height: 90px; flex-shrink: 0; }
-      .info { flex: 1; font-size: 11px; line-height: 1.7; }
-      .info strong { font-size: 12px; }
-      .track-label { text-align: center; font-size: 9px; color: #888; margin-top: 2px; }
-      .items { border-top: 1px dashed #ccc; padding-top: 8px; font-size: 11px; }
-      .item { display: flex; justify-content: space-between; padding: 2px 0; }
-      .footer { border-top: 1px dashed #ccc; padding-top: 8px; text-align: center; font-size: 9px; color: #aaa; }
-      .total { font-size: 13px; font-weight: 700; text-align: right; }
-      .marketing { background: #0a0a0f; color: #fff; text-align: center; padding: 8px; font-size: 9px; letter-spacing: 1px; margin-top: 4px; }
-      .marketing span { color: #c9a96e; font-weight: 700; }
-    </style>
-    </head><body>
-    <div class="label">
-      <div class="header">
-        <div class="logo">LIVRR</div>
-        <div class="order-id">#${order.id}</div>
-      </div>
-
-      <div class="qr-section">
-        <div>
-          <img class="qr-img" src="${qrUrl}" alt="QR Code suivi" />
-          <div class="track-label">📱 Scannez pour suivre</div>
-        </div>
-        <div class="info">
-          <strong>${order.customer}</strong><br/>
-          ${order.address}<br/><br/>
-          <strong>Livraison :</strong><br/>
-          ${order.deliverySlot}<br/><br/>
-          ${
-            order.assignedVendor
-              ? `<strong>Vendeur :</strong> ${order.assignedVendor}`
-              : ""
-          }
-        </div>
-      </div>
-
-      <div class="items">
-        ${order.items
-          .map(
-            (i) => `
-          <div class="item">
-            <span>${i.name} — ${i.size}</span>
-            <span>x${i.qty}</span>
-          </div>
-        `
-          )
-          .join("")}
-        <div class="total">TOTAL : €${order.total}</div>
-      </div>
-
-      <div class="marketing">
-        Livré par <span>LIVRR</span> · Luxe en moins d'1 heure · livrr.fr
-      </div>
-
-      <div class="footer">QR Code de suivi client · Ne pas retirer de l'emballage</div>
-    </div>
-    <script>window.onload=function(){window.print();}</script>
-    </body></html>`);
+  const openAcceptModal = (id) => {
+    setPendingAcceptId(id);
+    setSelectedVendorId(null);
+    setShowAcceptModal(true);
   };
 
-  const printOrder = (order) => {
-    const w = window.open("", "_blank");
-    w.document.write(`<html><head><title>LIVRR — Bon #${order.id}</title>
-    <style>body{font-family:Helvetica,sans-serif;padding:30px;line-height:1.6}.header{border-bottom:2px solid #000;padding-bottom:15px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.details{background:#f9f9f9;padding:15px;border-radius:8px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th{text-align:left;background:#000;color:#fff;padding:10px}td{padding:12px 10px;border-bottom:1px solid #eee}.total{text-align:right;font-weight:bold;font-size:18px;margin-top:20px}.footer{margin-top:40px;text-align:center;font-size:11px;color:#888;border-top:1px dashed #ccc;padding-top:20px}</style>
-    </head><body>
-    <div class="header"><h1 style="margin:0;letter-spacing:2px">LIVRR</h1><span>COMMANDE #${
-      order.id
-    }</span></div>
-    <div class="details"><p><strong>CLIENT :</strong> ${
-      order.customer
-    }</p><p><strong>ADRESSE :</strong> ${
-      order.address
-    }</p><p><strong>LIVRAISON :</strong> ${order.deliverySlot}</p>${
-      order.assignedVendor
-        ? `<p><strong>VENDEUR :</strong> ${order.assignedVendor}</p>`
-        : ""
-    }</div>
-    <table><thead><tr><th>ARTICLE</th><th>TAILLE</th><th>QTY</th></tr></thead><tbody>${order.items
-      .map(
-        (i) => `<tr><td>${i.name}</td><td>${i.size}</td><td>x${i.qty}</td></tr>`
-      )
-      .join("")}</tbody></table>
-    <div class="total">TOTAL : €${order.total}</div>
-    <div class="footer">Document de préparation interne — Ne pas joindre au colis.</div>
-    <script>window.print();window.close();</script></body></html>`);
+  const confirmAccept = () => {
+    if (!selectedVendorId) return toast.error("Sélectionnez un vendeur");
+    const vendor = INITIAL_STAFF.find((s) => s.id === selectedVendorId);
+    transition(pendingAcceptId, "preparing", { assignedVendor: vendor.name });
+    addHisto(pendingAcceptId, "Acceptée", vendor.name);
+    addHisto(pendingAcceptId, "En préparation", vendor.name);
+    toast.success(`Commande acceptée — Assignée à ${vendor.name}`, {
+      icon: "✅",
+    });
+    setShowAcceptModal(false);
   };
 
-  const filteredOrders = orders.filter(
+  const openRefusModal = (id) => {
+    setPendingRefusId(id);
+    setMotifRefus("");
+    setMotifCustom("");
+    setShowRefusModal(true);
+  };
+
+  const confirmRefus = () => {
+    const motif = motifRefus === "Autre (préciser)" ? motifCustom : motifRefus;
+    if (!motif.trim()) return toast.error("Le motif de refus est obligatoire");
+    transition(pendingRefusId, "refused", { motifRefus: motif });
+    addHisto(pendingRefusId, "Refusée", "Boutique", motif);
+    toast.error("Commande refusée — Client notifié et remboursé", {
+      duration: 4000,
+    });
+    setShowRefusModal(false);
+  };
+
+  const openCancelModal = (id) => {
+    setPendingCancelId(id);
+    setMotifCancel("");
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = () => {
+    if (!motifCancel.trim())
+      return toast.error("Le motif d'annulation est obligatoire");
+    transition(pendingCancelId, "cancelled", { motifRefus: motifCancel });
+    addHisto(pendingCancelId, "Annulée", "Boutique", motifCancel);
+    toast("Commande annulée — Remboursement déclenché", { icon: "ℹ️" });
+    setShowCancelModal(false);
+  };
+
+  const markReady = (id) => {
+    transition(id, "ready");
+    const vendor = orders.find((o) => o.id === id)?.assignedVendor || "Vendeur";
+    addHisto(id, "Prête", vendor);
+    toast.success("Colis prêt — Signal envoyé au coursier LIVRR !", {
+      icon: "📦",
+    });
+  };
+
+  const markTaken = (id) => {
+    transition(id, "taken");
+    addHisto(id, "Prise en charge", "Coursier LIVRR");
+    toast.success("Prise en charge par le coursier", { icon: "🛵" });
+  };
+
+  const markDelivered = (id) => {
+    transition(id, "delivered");
+    addHisto(id, "Livrée", "Coursier LIVRR");
+    toast.success("Livraison confirmée ! ✓", { icon: "🎉" });
+  };
+
+  const filtered = orders.filter(
     (o) => filter === "all" || o.status === filter
   );
 
   return (
-    <>
-      <style>{`
-        @keyframes orderIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .order-card {
-          background: var(--white);
-          border-radius: 20px;
-          border: 1px solid rgba(0,0,0,0.055);
-          display: grid;
-          grid-template-columns: 160px 1fr 200px 180px;
-          align-items: center;
-          gap: 28px;
-          padding: 24px 28px;
-          transition: all 0.25s ease;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .order-card:hover {
-          box-shadow: 0 12px 40px rgba(0,0,0,0.10);
-          transform: translateY(-2px);
-        }
-        .order-card.new-order {
-          border-left: 4px solid var(--gold);
-          background: linear-gradient(135deg, rgba(201,169,110,0.02) 0%, var(--white) 40%);
-        }
-        .order-card.new-order::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; height: 2px;
-          background: linear-gradient(90deg, var(--gold), var(--gold-light), transparent);
-        }
-        .filter-pill {
-          padding: 9px 20px;
-          border-radius: 30px;
-          border: none;
-          font-size: 13px;
-          cursor: pointer;
-          font-family: var(--font-body);
-          font-weight: 500;
-          transition: all 0.25s ease;
-          letter-spacing: 0.02em;
-        }
-        .filter-pill.active {
-          background: var(--noir);
-          color: var(--white);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-        .filter-pill.inactive {
-          background: transparent;
-          color: var(--gray);
-        }
-        .filter-pill.inactive:hover {
-          background: var(--white-2);
-          color: var(--noir);
-        }
-        .vendor-card {
-          display: flex; align-items: center; gap: 14px;
-          padding: 14px 16px;
-          border-radius: 14px;
-          border: 1.5px solid rgba(0,0,0,0.07);
-          background: #FAFAF8;
-          cursor: pointer;
-          transition: all 0.25s ease;
-        }
-        .vendor-card:hover { border-color: var(--gold-light); background: var(--gold-lighter); }
-        .vendor-card.selected {
-          border-color: var(--gold);
-          background: rgba(201,169,110,0.06);
-          box-shadow: 0 0 0 3px rgba(201,169,110,0.1);
-        }
-        .vendor-card.disabled { opacity: 0.45; pointer-events: none; }
-        .action-btn-print {
-          width: 44px; height: 44px; padding: 0;
-          display: flex; align-items: center; justify-content: center;
-          border-radius: 12px;
-          border: 1px solid rgba(0,0,0,0.1);
-          background: var(--white-2);
-          font-size: 18px;
-          transition: all 0.2s ease;
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-        .action-btn-print:hover { background: var(--white-3); transform: scale(1.05); }
-      `}</style>
-
-      <div className="page">
-        {/* ── HEADER ── */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            marginBottom: "36px",
-            animation: "slideInLeft 0.4s ease forwards",
-          }}
-        >
-          <div>
-            <h1
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "42px",
-                fontWeight: "400",
-                marginBottom: "6px",
-              }}
-            >
-              Commandes
-            </h1>
-            <p style={{ color: "var(--gray)", fontSize: "14px" }}>
-              Flux opérationnel en temps réel
-            </p>
-            <div
-              style={{
-                marginTop: "16px",
-                height: "1px",
-                background:
-                  "linear-gradient(90deg, var(--gold-light), transparent)",
-                width: "80px",
-              }}
-            />
-          </div>
-
-          {/* Filtres */}
+    <div className="page" style={{ padding: "44px 52px" }}>
+      {/* HEADER */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          marginBottom: "36px",
+        }}
+      >
+        <div>
           <div
             style={{
-              display: "flex",
-              gap: "6px",
-              background: "rgba(0,0,0,0.03)",
-              padding: "5px",
-              borderRadius: "16px",
-              border: "1px solid rgba(0,0,0,0.06)",
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--gray)",
+              marginBottom: "8px",
             }}
           >
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`filter-pill ${
-                  filter === f.id ? "active" : "inactive"
-                }`}
-              >
-                {f.label}
-                {f.id !== "all" && (
-                  <span
-                    style={{
-                      marginLeft: "5px",
-                      opacity: 0.55,
-                      fontSize: "12px",
-                    }}
-                  >
-                    ({orders.filter((o) => o.status === f.id).length})
-                  </span>
-                )}
-              </button>
-            ))}
+            Opérations
           </div>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "44px",
+              fontWeight: "300",
+              lineHeight: 1.1,
+            }}
+          >
+            Commandes
+          </h1>
+          <p
+            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "6px" }}
+          >
+            {orders.filter((o) => o.status === "new").length > 0
+              ? `⚡ ${
+                  orders.filter((o) => o.status === "new").length
+                } commande(s) en attente — délai 3–5 min`
+              : "Aucune nouvelle commande en attente"}
+          </p>
         </div>
+      </div>
 
-        {/* ── LISTE ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {filteredOrders.length === 0 ? (
+      {/* FILTRES */}
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "24px",
+          flexWrap: "wrap",
+        }}
+      >
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "30px",
+              border: `1.5px solid ${
+                filter === f.id ? "var(--gold)" : "rgba(0,0,0,0.1)"
+              }`,
+              background:
+                filter === f.id ? "rgba(201,169,110,0.08)" : "transparent",
+              color: filter === f.id ? "var(--gold-dark)" : "var(--gray)",
+              fontSize: "12px",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontFamily: "var(--font-body)",
+              transition: "all 0.2s",
+            }}
+          >
+            {f.label}
+            <span style={{ marginLeft: "6px", opacity: 0.6 }}>
+              {f.id === "all"
+                ? orders.length
+                : orders.filter((o) => o.status === f.id).length}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* LISTE + DÉTAIL */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: selectedOrder ? "1fr 400px" : "1fr",
+          gap: "20px",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {filtered.length === 0 && (
             <div
               style={{
                 textAlign: "center",
-                padding: "80px",
-                background: "var(--white)",
-                borderRadius: "20px",
+                padding: "60px",
+                color: "var(--gray)",
+                background: "#fff",
+                borderRadius: "14px",
                 border: "1px dashed rgba(0,0,0,0.1)",
-                animation: "fadeIn 0.4s ease forwards",
               }}
             >
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>📦</div>
+              Aucune commande dans cette catégorie
+            </div>
+          )}
+          {filtered.map((order) => {
+            const cfg = STATUS_CONFIG[order.status];
+            const isNew = order.status === "new";
+            return (
               <div
+                key={order.id}
+                onClick={() =>
+                  setSelectedOrder(
+                    selectedOrder?.id === order.id ? null : order
+                  )
+                }
                 style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "22px",
-                  marginBottom: "8px",
+                  background: "#fff",
+                  borderRadius: "14px",
+                  padding: "20px 24px",
+                  border: `1.5px solid ${
+                    selectedOrder?.id === order.id
+                      ? "var(--gold)"
+                      : isNew
+                      ? "rgba(245,158,11,0.4)"
+                      : "rgba(0,0,0,0.07)"
+                  }`,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: isNew
+                    ? "0 0 0 3px rgba(245,158,11,0.08)"
+                    : selectedOrder?.id === order.id
+                    ? "0 4px 20px rgba(201,169,110,0.15)"
+                    : "0 1px 4px rgba(0,0,0,0.04)",
                 }}
               >
-                Aucune commande
-              </div>
-              <p style={{ color: "var(--gray)", fontSize: "14px" }}>
-                Cette section est vide pour le moment.
-              </p>
-            </div>
-          ) : (
-            filteredOrders.map((order, i) => {
-              const cfg = STATUS_CONFIG[order.status];
-              return (
                 <div
-                  key={order.id}
-                  className={`order-card ${
-                    order.status === "new" ? "new-order" : ""
-                  }`}
                   style={{
-                    animation: `orderIn 0.4s ${i * 0.07}s ease both`,
-                    opacity: 0,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "14px",
                   }}
                 >
-                  {/* COL 1 — ID & TIME */}
                   <div>
                     <div
                       style={{
                         fontFamily: "var(--font-display)",
+                        fontSize: "18px",
                         fontWeight: "600",
-                        fontSize: "20px",
-                        letterSpacing: "0.5px",
-                        marginBottom: "6px",
+                        marginBottom: "2px",
                       }}
                     >
-                      #{order.id}
+                      {order.id}
                     </div>
+                    <div style={{ fontSize: "13px", color: "var(--gray)" }}>
+                      {order.customer} · {order.time}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
                     <div
                       style={{
-                        fontSize: "12px",
-                        color: "var(--gray)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        marginBottom: "6px",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "20px",
+                        fontWeight: "300",
+                        marginBottom: "4px",
                       }}
                     >
-                      <span
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          background: "var(--gold)",
-                          display: "inline-block",
-                          flexShrink: 0,
-                        }}
-                      />
-                      {order.time}
+                      {order.total} €
                     </div>
-                    {order.assignedVendor && (
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--info)",
-                          fontWeight: "600",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span>👤</span> {order.assignedVendor}
-                      </div>
-                    )}
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        borderRadius: "20px",
+                        fontSize: "10px",
+                        fontWeight: "700",
+                        background: cfg.bg,
+                        color: cfg.color,
+                        border: `1px solid ${cfg.dot}33`,
+                      }}
+                    >
+                      {cfg.label}
+                    </span>
                   </div>
+                </div>
 
-                  {/* COL 2 — CLIENT & ARTICLES */}
+                <div style={{ marginBottom: "14px", overflowX: "auto" }}>
+                  <OrderStepper status={order.status} />
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--gray)",
+                    marginBottom: "14px",
+                  }}
+                >
+                  {order.items
+                    .map((i) => `${i.name} (${i.size}) × ${i.qty}`)
+                    .join(" · ")}
+                </div>
+
+                <div
+                  style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {order.status === "new" && (
+                    <>
+                      <button
+                        className="btn-gold"
+                        style={{ fontSize: "12px", padding: "8px 16px" }}
+                        onClick={() => openAcceptModal(order.id)}
+                      >
+                        ✓ Accepter
+                      </button>
+                      <button
+                        className="btn-danger"
+                        style={{ fontSize: "12px", padding: "8px 16px" }}
+                        onClick={() => openRefusModal(order.id)}
+                      >
+                        ✕ Refuser
+                      </button>
+                    </>
+                  )}
+                  {order.status === "preparing" && (
+                    <>
+                      <button
+                        className="btn-gold"
+                        style={{ fontSize: "12px", padding: "8px 16px" }}
+                        onClick={() => markReady(order.id)}
+                      >
+                        📦 Colis prêt
+                      </button>
+                      <button
+                        className="btn-outline"
+                        style={{
+                          fontSize: "12px",
+                          padding: "8px 16px",
+                          color: "var(--error)",
+                          borderColor: "var(--error)",
+                        }}
+                        onClick={() => openCancelModal(order.id)}
+                      >
+                        Annuler
+                      </button>
+                    </>
+                  )}
+                  {order.status === "ready" && (
+                    <button
+                      className="btn-gold"
+                      style={{ fontSize: "12px", padding: "8px 16px" }}
+                      onClick={() => markTaken(order.id)}
+                    >
+                      🛵 Remis au coursier
+                    </button>
+                  )}
+                  {order.status === "taken" && (
+                    <button
+                      className="btn-gold"
+                      style={{ fontSize: "12px", padding: "8px 16px" }}
+                      onClick={() => markDelivered(order.id)}
+                    >
+                      ✓ Confirmer livraison
+                    </button>
+                  )}
+                  {order.status === "delivered" && (
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "#15803D",
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✓ Commande livrée
+                    </span>
+                  )}
+                  {order.status === "refused" && (
+                    <span style={{ fontSize: "12px", color: "var(--error)" }}>
+                      Refusée — {order.motifRefus}
+                    </span>
+                  )}
+                  {order.status === "cancelled" && (
+                    <span style={{ fontSize: "12px", color: "var(--gray)" }}>
+                      Annulée — {order.motifRefus}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* DÉTAIL */}
+        {selectedOrder &&
+          (() => {
+            const order =
+              orders.find((o) => o.id === selectedOrder.id) || selectedOrder;
+            return (
+              <div
+                className="card"
+                style={{
+                  position: "sticky",
+                  top: "20px",
+                  height: "fit-content",
+                  maxHeight: "calc(100vh - 120px)",
+                  overflowY: "auto",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "20px",
+                  }}
+                >
                   <div>
                     <div
                       style={{
+                        fontSize: "10px",
+                        color: "var(--gold)",
                         fontWeight: "700",
-                        fontSize: "15px",
-                        marginBottom: "5px",
-                      }}
-                    >
-                      {order.customer}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--gray)",
-                        lineHeight: "1.5",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {order.items
-                        .map((i) => `${i.qty}× ${i.name} [${i.size}]`)
-                        .join(" · ")}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--gray-light)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "5px",
-                      }}
-                    >
-                      <span>📍</span>
-                      {order.address}
-                    </div>
-                  </div>
-
-                  {/* COL 3 — STATUS & SLOT */}
-                  <div style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "7px 16px",
-                        borderRadius: "30px",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        letterSpacing: "0.06em",
                         textTransform: "uppercase",
-                        background: cfg.bg,
-                        color: cfg.color,
-                        border: `1px solid ${cfg.border}`,
-                        marginBottom: "10px",
+                        letterSpacing: "0.1em",
+                        marginBottom: "4px",
                       }}
                     >
-                      <span
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          background: cfg.dot,
-                          flexShrink: 0,
-                        }}
-                      />
-                      {cfg.label}
+                      Détail commande
                     </div>
-                    <div
+                    <h3
                       style={{
-                        fontSize: "12px",
-                        color: "var(--gray)",
-                        fontWeight: "500",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "5px",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "22px",
+                        fontWeight: "400",
                       }}
                     >
-                      <span>🕒</span> {order.deliverySlot}
-                    </div>
+                      {order.id}
+                    </h3>
                   </div>
-
-                  {/* COL 4 — ACTIONS */}
-                  <div
+                  <button
+                    onClick={() => setSelectedOrder(null)}
                     style={{
-                      display: "flex",
-                      gap: "10px",
-                      justifyContent: "flex-end",
-                      alignItems: "center",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "18px",
+                      color: "var(--gray)",
                     }}
                   >
-                    <button
-                      className="action-btn-print"
-                      onClick={() => printOrder(order)}
-                      title="Imprimer le bon"
-                    >
-                      🖨️
-                    </button>
-
-                    {order.status === "new" && (
-                      <button
-                        className="btn-gold"
-                        style={{
-                          padding: "0 20px",
-                          height: "44px",
-                          fontSize: "13px",
-                          fontWeight: "700",
-                          letterSpacing: "0.04em",
-                        }}
-                        onClick={() => handleAcceptClick(order.id)}
-                      >
-                        Accepter
-                      </button>
-                    )}
-
-                    {order.status === "preparing" && (
-                      <button
-                        style={{
-                          padding: "0 20px",
-                          height: "44px",
-                          fontSize: "13px",
-                          fontWeight: "700",
-                          letterSpacing: "0.04em",
-                          borderRadius: "var(--radius-md)",
-                          background: "var(--noir)",
-                          color: "var(--white)",
-                          border: "none",
-                          cursor: "pointer",
-                          fontFamily: "var(--font-body)",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#1a1a2e";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "var(--noir)";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                        onClick={() => updateStatus(order.id, "ready")}
-                      >
-                        Prêt ✓
-                      </button>
-                    )}
-
-                    {order.status === "ready" && (
-                      <div style={{ textAlign: "right" }}>
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            color: "var(--success)",
-                            fontWeight: "700",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: "7px",
-                              height: "7px",
-                              borderRadius: "50%",
-                              background: "var(--success)",
-                              display: "inline-block",
-                            }}
-                          />
-                          Prête — Coursier notifié
-                        </div>
-                        <button
-                          onClick={() => printLabel(order)}
-                          style={{
-                            marginTop: "8px",
-                            padding: "7px 14px",
-                            borderRadius: "8px",
-                            border: "1.5px solid var(--gold)",
-                            background: "rgba(201,169,110,0.06)",
-                            color: "var(--gold-dark)",
-                            fontSize: "12px",
-                            fontWeight: "700",
-                            cursor: "pointer",
-                            fontFamily: "var(--font-body)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            transition: "var(--transition)",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(201,169,110,0.15)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background =
-                              "rgba(201,169,110,0.06)")
-                          }
-                        >
-                          📦 Imprimer l'étiquette QR
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    ✕
+                  </button>
                 </div>
-              );
-            })
-          )}
-        </div>
 
-        {/* ── MODAL VENDEUR ── */}
-        {showVendorModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(10,10,15,0.75)",
-              backdropFilter: "blur(8px)",
-              zIndex: 1000,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              animation: "fadeIn 0.2s ease forwards",
-            }}
-            onClick={() => setShowVendorModal(false)}
-          >
-            <div
-              style={{
-                background: "var(--white)",
-                borderRadius: "24px",
-                padding: "36px",
-                width: "100%",
-                maxWidth: "480px",
-                boxShadow: "0 40px 100px rgba(0,0,0,0.3)",
-                animation:
-                  "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards",
-                position: "relative",
-                overflow: "hidden",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Ligne dorée haut */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: "10%",
-                  right: "10%",
-                  height: "2px",
-                  background:
-                    "linear-gradient(90deg, transparent, var(--gold), transparent)",
-                }}
-              />
-
-              <h3
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "28px",
-                  fontWeight: "400",
-                  marginBottom: "6px",
-                }}
-              >
-                Assigner un vendeur
-              </h3>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "var(--gray)",
-                  marginBottom: "28px",
-                }}
-              >
-                Commande{" "}
-                <strong
+                <div
                   style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "16px",
+                    padding: "12px 14px",
+                    background: "#F8F7F4",
+                    borderRadius: "10px",
+                    marginBottom: "12px",
                   }}
                 >
-                  #{pendingOrderId}
-                </strong>{" "}
-                — sélectionnez le vendeur
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  marginBottom: "28px",
-                }}
-              >
-                {staff.map((member, i) => (
                   <div
-                    key={member.id}
-                    className={`vendor-card ${
-                      selectedVendorId === member.id ? "selected" : ""
-                    }`}
-                    onClick={() => setSelectedVendorId(member.id)}
                     style={{
-                      animation: `fadeUp 0.3s ${i * 0.06}s ease both`,
-                      opacity: 0,
+                      fontSize: "10px",
+                      color: "var(--gray)",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      marginBottom: "4px",
                     }}
                   >
+                    Client
+                  </div>
+                  <div style={{ fontWeight: "600", fontSize: "14px" }}>
+                    {order.customer}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--gray)",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {order.address}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--gray)",
+                      marginTop: "2px",
+                    }}
+                  >
+                    Créneau : {order.deliverySlot}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "12px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--gray)",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Articles
+                  </div>
+                  {order.items.map((item, i) => (
                     <div
+                      key={i}
                       style={{
-                        width: "46px",
-                        height: "46px",
-                        borderRadius: "14px",
-                        flexShrink: 0,
-                        background:
-                          selectedVendorId === member.id
-                            ? "linear-gradient(135deg, var(--gold), var(--gold-dark))"
-                            : "var(--gold-lighter)",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "17px",
-                        fontWeight: "800",
-                        color:
-                          selectedVendorId === member.id
-                            ? "var(--noir)"
-                            : "var(--gold-dark)",
-                        transition: "all 0.2s ease",
-                        boxShadow:
-                          selectedVendorId === member.id
-                            ? "0 4px 14px rgba(201,169,110,0.4)"
+                        justifyContent: "space-between",
+                        padding: "8px 0",
+                        borderBottom:
+                          i < order.items.length - 1
+                            ? "1px solid rgba(0,0,0,0.05)"
                             : "none",
                       }}
                     >
-                      {member.name.charAt(0)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: "600" }}>
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--gray)" }}>
+                          Taille {item.size} · Qté {item.qty}
+                        </div>
+                      </div>
+                      <span
                         style={{
-                          fontWeight: "700",
-                          fontSize: "14px",
-                          marginBottom: "2px",
+                          fontFamily: "var(--font-display)",
+                          fontSize: "15px",
                         }}
                       >
-                        {member.name}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "var(--gray)" }}>
-                        {member.role} · {member.sales} ventes
-                      </div>
+                        {item.price} €
+                      </span>
                     </div>
-                    <div
+                  ))}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      paddingTop: "10px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    <span>Total</span>
+                    <span
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: "4px",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "18px",
                       }}
                     >
-                      {selectedVendorId === member.id && (
-                        <span
-                          style={{
-                            color: "var(--gold)",
-                            fontWeight: "800",
-                            fontSize: "18px",
-                          }}
-                        >
-                          ✓
-                        </span>
-                      )}
+                      {order.total} €
+                    </span>
+                  </div>
+                </div>
+
+                {order.assignedVendor && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "rgba(201,169,110,0.06)",
+                      borderRadius: "8px",
+                      marginBottom: "12px",
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: "16px" }}>👤</span>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "var(--gray)",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Vendeur assigné
+                      </div>
+                      <div style={{ fontWeight: "600", fontSize: "13px" }}>
+                        {order.assignedVendor}
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  className="btn-gold"
-                  style={{
-                    flex: 2,
-                    padding: "14px",
-                    fontSize: "13px",
-                    fontWeight: "700",
-                    letterSpacing: "0.04em",
-                  }}
-                  onClick={handleConfirmVendor}
-                >
-                  Confirmer & Lancer →
-                </button>
-                <button
-                  className="btn-outline"
-                  style={{ flex: 1, padding: "14px" }}
-                  onClick={() => setShowVendorModal(false)}
-                >
-                  Annuler
-                </button>
+                <div>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--gray)",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    Historique
+                  </div>
+                  <Historique items={order.historique || []} />
+                </div>
               </div>
+            );
+          })()}
+      </div>
+
+      {/* MODAL ACCEPTATION */}
+      {showAcceptModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowAcceptModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "420px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--gold)",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: "6px",
+              }}
+            >
+              Accepter la commande
+            </div>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "24px",
+                fontWeight: "400",
+                marginBottom: "6px",
+              }}
+            >
+              {pendingAcceptId}
+            </h3>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--gray)",
+                marginBottom: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              L'acceptation déclenche le délai de livraison. Assignez un vendeur
+              responsable de la préparation.
+            </p>
+            <label className="label">Vendeur responsable *</label>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                marginBottom: "20px",
+              }}
+            >
+              {INITIAL_STAFF.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => setSelectedVendorId(s.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    border: `1.5px solid ${
+                      selectedVendorId === s.id
+                        ? "var(--gold)"
+                        : "rgba(0,0,0,0.08)"
+                    }`,
+                    background:
+                      selectedVendorId === s.id
+                        ? "rgba(201,169,110,0.06)"
+                        : "#FAFAF8",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: "var(--gold-light)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: "700",
+                      color: "var(--gold-dark)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {s.name.charAt(0)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "600", fontSize: "14px" }}>
+                      {s.name}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--gray)" }}>
+                      {s.role} · {s.sales} ventes
+                    </div>
+                  </div>
+                  {selectedVendorId === s.id && (
+                    <span style={{ color: "var(--gold)", fontWeight: "800" }}>
+                      ✓
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn-gold"
+                style={{ flex: 2 }}
+                onClick={confirmAccept}
+              >
+                Confirmer l'acceptation
+              </button>
+              <button
+                className="btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowAcceptModal(false)}
+              >
+                Annuler
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+
+      {/* MODAL REFUS */}
+      {showRefusModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowRefusModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "440px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--error)",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: "6px",
+              }}
+            >
+              Refuser la commande
+            </div>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "24px",
+                fontWeight: "400",
+                marginBottom: "6px",
+              }}
+            >
+              {pendingRefusId}
+            </h3>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--gray)",
+                marginBottom: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              Le client sera notifié et remboursé automatiquement. Le motif est{" "}
+              <strong>obligatoire</strong>.
+            </p>
+            <label className="label">Motif du refus *</label>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                marginBottom: "14px",
+              }}
+            >
+              {MOTIFS_REFUS.map((m) => (
+                <div
+                  key={m}
+                  onClick={() => setMotifRefus(m)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    transition: "all 0.2s",
+                    border: `1.5px solid ${
+                      motifRefus === m ? "var(--error)" : "rgba(0,0,0,0.08)"
+                    }`,
+                    background:
+                      motifRefus === m ? "rgba(192,57,43,0.05)" : "#FAFAF8",
+                    color: motifRefus === m ? "var(--error)" : "var(--noir)",
+                    fontWeight: motifRefus === m ? "600" : "400",
+                  }}
+                >
+                  {m}
+                </div>
+              ))}
+            </div>
+            {motifRefus === "Autre (préciser)" && (
+              <textarea
+                className="input-field"
+                placeholder="Précisez le motif..."
+                value={motifCustom}
+                onChange={(e) => setMotifCustom(e.target.value)}
+                rows={2}
+                style={{ marginBottom: "14px", resize: "none" }}
+              />
+            )}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn-danger"
+                style={{ flex: 2 }}
+                onClick={confirmRefus}
+              >
+                Confirmer le refus
+              </button>
+              <button
+                className="btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowRefusModal(false)}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ANNULATION */}
+      {showCancelModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setShowCancelModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "420px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--error)",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: "6px",
+              }}
+            >
+              Annuler la commande
+            </div>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "24px",
+                fontWeight: "400",
+                marginBottom: "6px",
+              }}
+            >
+              {pendingCancelId}
+            </h3>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--gray)",
+                marginBottom: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              Annulation irréversible après acceptation. Motif{" "}
+              <strong>obligatoire</strong>.
+            </p>
+            <label className="label">Motif de l'annulation *</label>
+            <textarea
+              className="input-field"
+              placeholder="Ex: Produit introuvable en rayon après acceptation..."
+              value={motifCancel}
+              onChange={(e) => setMotifCancel(e.target.value)}
+              rows={3}
+              style={{ resize: "none" }}
+            />
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn-danger"
+                style={{ flex: 2 }}
+                onClick={confirmCancel}
+              >
+                Confirmer l'annulation
+              </button>
+              <button
+                className="btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowCancelModal(false)}
+              >
+                Retour
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
