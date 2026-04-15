@@ -309,7 +309,6 @@ select {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
-
 .btn-primary:hover::after {
   opacity: 1;
 }
@@ -357,7 +356,6 @@ select {
   transform: translateY(-1px);
   box-shadow: var(--shadow-gold);
 }
-
 .btn-gold:hover::before {
   left: 100%;
 }
@@ -447,12 +445,10 @@ select {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-
 .card:hover::before {
   opacity: 1;
 }
 
-/* Card sans hover */
 .card-static {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -493,7 +489,6 @@ select {
   box-shadow: var(--shadow-md);
   transform: translateY(-3px);
 }
-
 .stat-card:hover::after {
   width: 100%;
 }
@@ -560,7 +555,6 @@ select {
 .input-field:hover:not(:focus) {
   border-color: rgba(0, 0, 0, 0.22);
 }
-
 .input-field::placeholder {
   color: var(--gray-light);
 }
@@ -648,11 +642,9 @@ select {
 .table tr {
   transition: all var(--transition);
 }
-
 .table tr:hover td {
   background: rgba(201, 169, 110, 0.04);
 }
-
 .table tr:last-child td {
   border-bottom: none;
 }
@@ -714,13 +706,11 @@ select {
   transition: all var(--transition);
   position: relative;
 }
-
 .sub-link:hover {
   color: rgba(255, 255, 255, 0.9) !important;
   background: rgba(255, 255, 255, 0.06) !important;
   padding-left: 16px !important;
 }
-
 .sub-active {
   color: var(--gold) !important;
   background: rgba(201, 169, 110, 0.1) !important;
@@ -736,7 +726,6 @@ select {
 .modal-overlay {
   animation: fadeIn 0.25s ease forwards;
 }
-
 .modal-content {
   animation: scaleIn 0.3s var(--transition-bounce) forwards;
 }
@@ -761,11 +750,9 @@ select {
    LUXE ACCENTS
    ============================================ */
 
-/* Ligne dorée décorative en haut des éléments importants */
 .gold-top {
   position: relative;
 }
-
 .gold-top::before {
   content: "";
   position: absolute;
@@ -783,7 +770,6 @@ select {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-/* Tag numéro de commande */
 .order-tag {
   font-family: var(--font-display);
   font-size: 18px;
@@ -792,7 +778,6 @@ select {
   color: var(--noir);
 }
 
-/* Section title with decorative line */
 .section-title {
   font-family: var(--font-display);
   font-size: 13px;
@@ -805,7 +790,6 @@ select {
   gap: 12px;
   margin-bottom: 16px;
 }
-
 .section-title::after {
   content: "";
   flex: 1;
@@ -814,13 +798,12 @@ select {
 }
 
 /* ============================================
-   HOVER LIFT — utilitaire
+   HOVER LIFT
    ============================================ */
 
 .hover-lift {
   transition: transform var(--transition), box-shadow var(--transition);
 }
-
 .hover-lift:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
@@ -838,7 +821,6 @@ select {
   transition: background var(--transition);
   cursor: pointer;
 }
-
 .toggle-thumb {
   position: absolute;
   top: 3px;
@@ -851,14 +833,13 @@ select {
 }
 
 /* ============================================
-   PAGE HEADER STYLE
+   PAGE HEADER
    ============================================ */
 
 .page-header {
   margin-bottom: 36px;
   animation: slideInLeft 0.4s ease forwards;
 }
-
 .page-header h1 {
   font-family: var(--font-display);
   font-size: 40px;
@@ -867,7 +848,6 @@ select {
   line-height: 1.1;
   margin-bottom: 6px;
 }
-
 .page-header p {
   font-size: 14px;
   color: var(--gray);
@@ -910,7 +890,6 @@ select {
   background: var(--gray-bg);
   overflow: hidden;
 }
-
 .pos-left {
   overflow-y: auto;
   display: flex;
@@ -918,7 +897,6 @@ select {
   gap: 20px;
   min-width: 0;
 }
-
 .pos-right {
   display: flex;
   flex-direction: column;
@@ -926,7 +904,6 @@ select {
   height: 100%;
   overflow: hidden;
 }
-
 .pos-right-scroll {
   flex: 1;
   overflow-y: scroll;
@@ -936,16 +913,13 @@ select {
   padding-right: 4px;
   min-height: 0;
 }
-
 .pos-right-btn {
   flex-shrink: 0;
   padding-top: 10px;
 }
 
 /* ============================================
-   MODE SOMBRE — [data-theme="dark"]
-   Activé via toggle dans Paramètres
-   Mode clair = défaut
+   MODE SOMBRE
    ============================================ */
 
 [data-theme="dark"] {
@@ -970,56 +944,46 @@ select {
   background: #0d0d12;
   color: #f0ede6;
 }
-
 [data-theme="dark"] .card,
 [data-theme="dark"] .card-static,
 [data-theme="dark"] .stat-card {
   background: #13131a;
   border-color: rgba(255, 255, 255, 0.06);
 }
-
 [data-theme="dark"] .input-field {
   background: #1a1a22;
   border-color: rgba(255, 255, 255, 0.1);
   color: #f0ede6;
 }
-
 [data-theme="dark"] .input-field::placeholder {
   color: rgba(255, 255, 255, 0.2);
 }
-
 [data-theme="dark"] .table th {
   background: #18181f;
   color: rgba(255, 255, 255, 0.3);
   border-color: rgba(255, 255, 255, 0.06);
 }
-
 [data-theme="dark"] .table td {
   border-color: rgba(255, 255, 255, 0.04);
   color: #f0ede6;
 }
-
 [data-theme="dark"] .table tr:hover td {
   background: rgba(255, 255, 255, 0.03);
 }
-
 [data-theme="dark"] .btn-outline {
   color: #f0ede6;
   border-color: rgba(255, 255, 255, 0.15);
 }
-
 [data-theme="dark"] .btn-outline:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.25);
 }
-
 [data-theme="dark"] h1,
 [data-theme="dark"] h2,
 [data-theme="dark"] h3,
 [data-theme="dark"] h4 {
   color: #f0ede6;
 }
-
 [data-theme="dark"] .stat-label {
   color: rgba(255, 255, 255, 0.3);
 }
@@ -1029,16 +993,13 @@ select {
 [data-theme="dark"] .stat-sub {
   color: rgba(255, 255, 255, 0.35);
 }
-
 [data-theme="dark"] .badge-gray {
   background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 255, 255, 0.5);
 }
-
 [data-theme="dark"] .skeleton {
   background: linear-gradient(90deg, #18181f 25%, #1e1e28 50%, #18181f 75%);
 }
-
 [data-theme="dark"] .page {
   background: #0d0d12;
 }
@@ -1047,12 +1008,13 @@ select {
    LIVRR — Animations Luxe
    ============================================================ */
 
+/* ── Logo shimmer aller-retour droite→gauche puis gauche→droite ── */
 @keyframes livrrShimmer {
   0% {
-    background-position: -200% center;
+    background-position: 200% center;
   }
   100% {
-    background-position: 200% center;
+    background-position: -200% center;
   }
 }
 
@@ -1070,7 +1032,7 @@ select {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: livrrShimmer 4s linear infinite;
+  animation: livrrShimmer 3.5s ease-in-out infinite alternate;
   animation-delay: 2s;
 }
 
