@@ -66,6 +66,124 @@ const PLANS = [
   },
 ];
 
+// ── Composant Logo uploadable ─────────────────────────────────────
+function LogoUpload() {
+  const [logoUrl, setLogoUrl] = React.useState(null);
+  const [uploading, setUploading] = React.useState(false);
+  const inputRef = React.useRef(null);
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo trop lourd — max 2 Mo");
+      return;
+    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTimeout(() => {
+        setLogoUrl(reader.result);
+        setUploading(false);
+        toast.success("Logo mis à jour ✓", { icon: "🖼️" });
+      }, 800);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{
+          width: "80px",
+          height: "80px",
+          borderRadius: "12px",
+          border: "1.5px dashed rgba(0,0,0,0.15)",
+          background: "rgba(0,0,0,0.02)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          overflow: "hidden",
+          transition: "all 0.2s",
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.borderColor = "var(--gold)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.borderColor = "rgba(0,0,0,0.15)")
+        }
+      >
+        {uploading ? (
+          <div className="spinner" />
+        ) : logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="Logo"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "22px" }}>🖼️</div>
+            <div
+              style={{
+                fontSize: "9px",
+                color: "var(--gray)",
+                marginTop: "4px",
+                fontWeight: "600",
+              }}
+            >
+              Ajouter
+            </div>
+          </div>
+        )}
+      </div>
+      <div>
+        <button
+          className="btn-outline"
+          style={{ fontSize: "12px", marginBottom: "6px" }}
+          onClick={() => inputRef.current?.click()}
+        >
+          {logoUrl ? "Changer le logo" : "Télécharger un logo"}
+        </button>
+        <div
+          style={{ fontSize: "11px", color: "var(--gray)", lineHeight: 1.5 }}
+        >
+          JPG ou PNG · Max 2 Mo · Recommandé 400×400 px
+        </div>
+        {logoUrl && (
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "11px",
+              color: "var(--error)",
+              marginTop: "4px",
+              fontFamily: "var(--font-body)",
+            }}
+            onClick={() => {
+              setLogoUrl(null);
+              toast("Logo supprimé");
+            }}
+          >
+            Supprimer le logo
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        onChange={handleFile}
+        style={{ display: "none" }}
+      />
+    </div>
+  );
+}
+
 function SubscriptionSection() {
   const [current, setCurrent] = useState("classic");
   // null | { planId, status: "pending_admin" | "pending_payment" | "active" }
@@ -74,6 +192,17 @@ function SubscriptionSection() {
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   const currentPlan = PLANS.find((p) => p.id === current);
+  // Date de validité simulée (sera branchée Supabase)
+  const dateValidite = new Date();
+  dateValidite.setMonth(dateValidite.getMonth() + 1);
+  const dateValiditeStr = dateValidite.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const joursRestants = Math.ceil(
+    (dateValidite - new Date()) / (1000 * 60 * 60 * 24)
+  );
 
   const handleRequestClick = (plan) => {
     setSelectedPlan(plan);
@@ -153,6 +282,135 @@ function SubscriptionSection() {
             </strong>{" "}
             — {currentPlan?.price}€/mois
           </p>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "12px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                padding: "10px 16px",
+                background: "rgba(201,169,110,0.06)",
+                border: "1px solid rgba(201,169,110,0.2)",
+                borderRadius: "10px",
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "14px" }}>📅</span>
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--gray)",
+                    marginBottom: "2px",
+                  }}
+                >
+                  Valide jusqu'au
+                </div>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "var(--noir)",
+                  }}
+                >
+                  {dateValiditeStr}
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                padding: "10px 16px",
+                background:
+                  joursRestants <= 7 ? "var(--error-bg)" : "var(--success-bg)",
+                border: `1px solid ${
+                  joursRestants <= 7
+                    ? "rgba(192,57,43,0.2)"
+                    : "rgba(46,139,87,0.2)"
+                }`,
+                borderRadius: "10px",
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "14px" }}>
+                {joursRestants <= 7 ? "⚠️" : "✅"}
+              </span>
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--gray)",
+                    marginBottom: "2px",
+                  }}
+                >
+                  Renouvellement
+                </div>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color:
+                      joursRestants <= 7 ? "var(--error)" : "var(--success)",
+                  }}
+                >
+                  {joursRestants <= 7
+                    ? `Dans ${joursRestants} jour${
+                        joursRestants > 1 ? "s" : ""
+                      } ⚠`
+                    : `Dans ${joursRestants} jours`}
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                padding: "10px 16px",
+                background: "rgba(0,0,0,0.03)",
+                border: "1px solid rgba(0,0,0,0.07)",
+                borderRadius: "10px",
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "14px" }}>🔒</span>
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--gray)",
+                    marginBottom: "2px",
+                  }}
+                >
+                  Statut
+                </div>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "var(--success)",
+                  }}
+                >
+                  Actif
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Bannière statut demande en cours */}
@@ -916,6 +1174,12 @@ export default function Settings() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "16px" }}
             >
+              {/* Logo uploadable */}
+              <div>
+                <label className="label">Logo de la boutique</label>
+                <LogoUpload />
+              </div>
+
               <div>
                 <label className="label">Nom de la boutique</label>
                 <input className="input-field" defaultValue={boutique?.name} />
@@ -931,10 +1195,32 @@ export default function Settings() {
                   defaultValue={boutique?.address}
                 />
               </div>
+              <div>
+                <label className="label">
+                  Description longue (visible sur votre page LIVRR)
+                </label>
+                <textarea
+                  className="input-field"
+                  placeholder="Décrivez votre boutique : histoire, spécialités, savoir-faire, univers de marque…"
+                  rows={4}
+                  defaultValue="Sandro est une maison de mode parisienne fondée en 1984, alliant élégance contemporaine et sophistication. Nos collections mixent tendances actuelles et intemporalité."
+                  style={{ resize: "none", lineHeight: 1.6 }}
+                />
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--gray)",
+                    marginTop: "-8px",
+                  }}
+                >
+                  Cette description apparaît sur votre page boutique dans
+                  l'application client LIVRR.
+                </div>
+              </div>
               <button
                 className="btn-gold"
                 style={{ alignSelf: "flex-start" }}
-                onClick={() => toast.success("Profil mis à jour")}
+                onClick={() => toast.success("Profil mis à jour ✓")}
               >
                 Enregistrer les modifications
               </button>
