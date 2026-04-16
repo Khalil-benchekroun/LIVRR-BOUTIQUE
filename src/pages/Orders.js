@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
+/* ============================================================
+   LIVRR — Commandes
+   Machine à états CDC + Étiquette imprimable avec QR Code
+   ============================================================ */
+
 const now = () =>
   new Date().toLocaleTimeString("fr-FR", {
     hour: "2-digit",
@@ -218,6 +223,7 @@ const STEPS_LIST = [
   { key: "delivered", label: "Livrée", step: 6 },
 ];
 
+/* ── Stepper visuel ── */
 function OrderStepper({ status }) {
   const isTerminal = ["refused", "cancelled"].includes(status);
   const cfg = STATUS_CONFIG[status];
@@ -230,7 +236,7 @@ function OrderStepper({ status }) {
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          padding: "8px 12px",
+          padding: "6px 12px",
           background: cfg.bg,
           borderRadius: "8px",
           border: `1px solid ${cfg.dot}33`,
@@ -244,7 +250,7 @@ function OrderStepper({ status }) {
             background: cfg.dot,
           }}
         />
-        <span style={{ fontSize: "12px", fontWeight: "700", color: cfg.color }}>
+        <span style={{ fontSize: "11px", fontWeight: "700", color: cfg.color }}>
           {cfg.label}
         </span>
       </div>
@@ -268,8 +274,8 @@ function OrderStepper({ status }) {
             >
               <div
                 style={{
-                  width: "22px",
-                  height: "22px",
+                  width: "20px",
+                  height: "20px",
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
@@ -286,17 +292,16 @@ function OrderStepper({ status }) {
                       ? "var(--gold)"
                       : "rgba(0,0,0,0.1)"
                   }`,
-                  fontSize: "9px",
+                  fontSize: "8px",
                   fontWeight: "800",
                   color: done || current ? "#fff" : "rgba(0,0,0,0.3)",
-                  transition: "all 0.3s",
                 }}
               >
                 {done ? "✓" : s.step}
               </div>
               <span
                 style={{
-                  fontSize: "8px",
+                  fontSize: "7px",
                   fontWeight: "600",
                   color: done || current ? "var(--noir)" : "var(--gray)",
                   whiteSpace: "nowrap",
@@ -308,11 +313,11 @@ function OrderStepper({ status }) {
             {i < STEPS_LIST.length - 1 && (
               <div
                 style={{
-                  width: "18px",
+                  width: "16px",
                   height: "2px",
                   background:
                     s.step < currentStep ? "#22C55E" : "rgba(0,0,0,0.08)",
-                  marginBottom: "14px",
+                  marginBottom: "12px",
                   transition: "background 0.3s",
                 }}
               />
@@ -324,6 +329,7 @@ function OrderStepper({ status }) {
   );
 }
 
+/* ── Historique horodaté ── */
 function Historique({ items }) {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -345,11 +351,11 @@ function Historique({ items }) {
           >
             <div
               style={{
-                width: "8px",
-                height: "8px",
+                width: "7px",
+                height: "7px",
                 borderRadius: "50%",
                 background: i === 0 ? "var(--gold)" : "rgba(0,0,0,0.15)",
-                marginTop: "3px",
+                marginTop: "4px",
                 flexShrink: 0,
               }}
             />
@@ -395,20 +401,168 @@ function Historique({ items }) {
   );
 }
 
+/* ── Impression étiquette ── */
+function printLabel(order) {
+  const qrData = encodeURIComponent(`LIVRR-${order.id}-${order.customer}`);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrData}&bgcolor=ffffff&color=0a0a0f&margin=6`;
+
+  const w = window.open("", "_blank", "width=420,height=600");
+  w.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<title>Étiquette — ${order.id}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; background:#fff; display:flex; justify-content:center; padding:20px; }
+  .label {
+    width:100mm; min-height:150mm;
+    border:2px solid #0a0a0f;
+    border-radius:8px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    page-break-inside:avoid;
+  }
+  /* Header noir */
+  .label-header {
+    background:#0a0a0f;
+    padding:12px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .label-logo {
+    font-size:20px; font-weight:900; letter-spacing:6px; color:#C9A96E;
+  }
+  .label-id {
+    font-size:11px; color:rgba(255,255,255,0.5); letter-spacing:1px;
+  }
+  /* Ligne dorée */
+  .gold-line {
+    height:2px;
+    background:linear-gradient(90deg,#8C6A35,#C9A96E,#E8D5B0,#C9A96E,#8C6A35);
+  }
+  /* Corps */
+  .label-body {
+    padding:14px 16px;
+    display:flex; gap:14px; align-items:flex-start;
+    flex:1;
+  }
+  .label-qr { flex-shrink:0; text-align:center; }
+  .label-qr img { width:90px; height:90px; display:block; border:1px solid #eee; border-radius:4px; }
+  .label-qr-caption { font-size:8px; color:#999; margin-top:4px; letter-spacing:0.3px; }
+  .label-info { flex:1; }
+  .label-client {
+    font-size:16px; font-weight:800; color:#0a0a0f;
+    letter-spacing:0.3px; margin-bottom:8px;
+  }
+  .label-row {
+    display:flex; gap:6px; align-items:flex-start;
+    margin-bottom:5px;
+  }
+  .label-icon { font-size:11px; flex-shrink:0; margin-top:1px; }
+  .label-text { font-size:11px; color:#333; line-height:1.5; }
+  .label-text strong { color:#0a0a0f; font-weight:700; }
+  /* Séparateur */
+  .label-sep { border:none; border-top:1px dashed #ddd; margin:12px 16px; }
+  /* Numéro commande en grand */
+  .label-order-num {
+    text-align:center;
+    font-size:22px; font-weight:900; letter-spacing:3px;
+    color:#0a0a0f; padding:10px 16px 6px;
+    font-family:'Courier New',monospace;
+  }
+  /* Footer */
+  .label-footer {
+    background:#f8f7f4;
+    padding:8px 16px;
+    text-align:center;
+    font-size:8px; color:#aaa; letter-spacing:0.5px;
+    border-top:1px solid #eee;
+  }
+  @media print {
+    body { padding:0; }
+    .label { border-radius:0; border:2px solid #000; width:100mm; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="label">
+
+    <!-- Header -->
+    <div class="label-header">
+      <div class="label-logo">LIVRR</div>
+      <div class="label-id">ÉTIQUETTE LIVRAISON</div>
+    </div>
+    <div class="gold-line"></div>
+
+    <!-- Numéro de commande -->
+    <div class="label-order-num">${order.id}</div>
+
+    <hr class="label-sep"/>
+
+    <!-- Corps : QR + Infos -->
+    <div class="label-body">
+      <div class="label-qr">
+        <img src="${qrUrl}" alt="QR Code" />
+        <div class="label-qr-caption">📱 Scanner pour<br/>suivre la commande</div>
+      </div>
+      <div class="label-info">
+        <div class="label-client">${order.customer}</div>
+        <div class="label-row">
+          <span class="label-icon">📍</span>
+          <span class="label-text">${order.address}</span>
+        </div>
+        <div class="label-row">
+          <span class="label-icon">🕒</span>
+          <span class="label-text"><strong>Créneau :</strong> ${
+            order.deliverySlot
+          }</span>
+        </div>
+        <div class="label-row">
+          <span class="label-icon">📦</span>
+          <span class="label-text">
+            ${order.items
+              .map((i) => `${i.name} (${i.size}) ×${i.qty}`)
+              .join("<br/>")}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="label-sep"/>
+
+    <!-- Footer -->
+    <div class="label-footer">
+      LIVRR · Luxe livré en moins d'1 heure · livrr.fr<br/>
+      Ne pas retirer cette étiquette de l'emballage
+    </div>
+  </div>
+
+  <!-- Bouton impression (masqué à l'impression) -->
+  <div class="no-print" style="text-align:center;margin-top:16px;">
+    <button onclick="window.print()" style="padding:10px 24px;background:#0a0a0f;color:#C9A96E;border:none;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">
+      🖨️ IMPRIMER
+    </button>
+  </div>
+</body></html>`);
+  w.document.close();
+}
+
+/* ── Composant principal ── */
 export default function Orders() {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [filter, setFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showLabelModal, setShowLabelModal] = useState(false);
+  const [labelOrder, setLabelOrder] = useState(null);
 
+  // Modals
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [pendingAcceptId, setPendingAcceptId] = useState(null);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
-
   const [showRefusModal, setShowRefusModal] = useState(false);
   const [pendingRefusId, setPendingRefusId] = useState(null);
   const [motifRefus, setMotifRefus] = useState("");
   const [motifCustom, setMotifCustom] = useState("");
-
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [pendingCancelId, setPendingCancelId] = useState(null);
   const [motifCancel, setMotifCancel] = useState("");
@@ -501,6 +655,11 @@ export default function Orders() {
     transition(id, "delivered");
     addHisto(id, "Livrée", "Coursier LIVRR");
     toast.success("Livraison confirmée ! ✓", { icon: "🎉" });
+  };
+
+  const openLabelPreview = (order) => {
+    setLabelOrder(order);
+    setShowLabelModal(true);
   };
 
   const filtered = orders.filter(
@@ -646,6 +805,7 @@ export default function Orders() {
                     : "0 1px 4px rgba(0,0,0,0.04)",
                 }}
               >
+                {/* En-tête */}
                 <div
                   style={{
                     display: "flex",
@@ -696,10 +856,12 @@ export default function Orders() {
                   </div>
                 </div>
 
+                {/* Stepper */}
                 <div style={{ marginBottom: "14px", overflowX: "auto" }}>
                   <OrderStepper status={order.status} />
                 </div>
 
+                {/* Produits */}
                 <div
                   style={{
                     fontSize: "13px",
@@ -712,10 +874,47 @@ export default function Orders() {
                     .join(" · ")}
                 </div>
 
+                {/* Actions */}
                 <div
-                  style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
+                  {/* 🖨️ Bouton étiquette — sur TOUTES les commandes */}
+                  <button
+                    onClick={() => openLabelPreview(order)}
+                    title="Imprimer l'étiquette"
+                    style={{
+                      padding: "7px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(201,169,110,0.35)",
+                      background: "rgba(201,169,110,0.06)",
+                      color: "var(--gold-dark)",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                      transition: "all 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(201,169,110,0.14)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(201,169,110,0.06)")
+                    }
+                  >
+                    🖨️ Étiquette
+                  </button>
+
                   {order.status === "new" && (
                     <>
                       <button
@@ -802,7 +1001,7 @@ export default function Orders() {
           })}
         </div>
 
-        {/* DÉTAIL */}
+        {/* PANNEAU DÉTAIL */}
         {selectedOrder &&
           (() => {
             const order =
@@ -999,14 +1198,14 @@ export default function Orders() {
                   </div>
                 )}
 
-                <div>
+                <div style={{ marginBottom: "16px" }}>
                   <div
                     style={{
                       fontSize: "10px",
-                      color: "var(--gray)",
                       fontWeight: "700",
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
+                      color: "var(--gray)",
                       marginBottom: "12px",
                     }}
                   >
@@ -1014,12 +1213,267 @@ export default function Orders() {
                   </div>
                   <Historique items={order.historique || []} />
                 </div>
+
+                <button
+                  className="btn-gold"
+                  style={{ width: "100%", fontSize: "12px" }}
+                  onClick={() => openLabelPreview(order)}
+                >
+                  🖨️ Imprimer l'étiquette
+                </button>
               </div>
             );
           })()}
       </div>
 
-      {/* MODAL ACCEPTATION */}
+      {/* ── MODAL APERÇU ÉTIQUETTE ── */}
+      {showLabelModal && labelOrder && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowLabelModal(false)}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "480px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "20px",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--gold)",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Aperçu étiquette
+                </div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "22px",
+                    fontWeight: "400",
+                  }}
+                >
+                  {labelOrder.id}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowLabelModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                  color: "var(--gray)",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Aperçu de l'étiquette */}
+            <div
+              style={{
+                border: "2px solid #0a0a0f",
+                borderRadius: "8px",
+                overflow: "hidden",
+                marginBottom: "20px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  background: "#0a0a0f",
+                  padding: "12px 16px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "20px",
+                    letterSpacing: "6px",
+                    color: "#C9A96E",
+                    fontWeight: "700",
+                  }}
+                >
+                  LIVRR
+                </span>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    color: "rgba(255,255,255,0.4)",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  ÉTIQUETTE LIVRAISON
+                </span>
+              </div>
+
+              {/* Ligne dorée */}
+              <div
+                style={{
+                  height: "2px",
+                  background:
+                    "linear-gradient(90deg,#8C6A35,#C9A96E,#E8D5B0,#C9A96E,#8C6A35)",
+                }}
+              />
+
+              {/* Numéro commande */}
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "12px 16px 6px",
+                  fontFamily: "monospace",
+                  fontSize: "22px",
+                  fontWeight: "900",
+                  letterSpacing: "3px",
+                  color: "#0a0a0f",
+                }}
+              >
+                {labelOrder.id}
+              </div>
+
+              <div
+                style={{ borderTop: "1px dashed #ddd", margin: "8px 16px" }}
+              />
+
+              {/* Corps */}
+              <div
+                style={{
+                  padding: "10px 16px 14px",
+                  display: "flex",
+                  gap: "14px",
+                  alignItems: "flex-start",
+                }}
+              >
+                {/* QR Code */}
+                <div style={{ flexShrink: 0, textAlign: "center" }}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+                      `LIVRR-${labelOrder.id}-${labelOrder.customer}`
+                    )}&bgcolor=ffffff&color=0a0a0f&margin=4`}
+                    alt="QR Code"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      border: "1px solid #eee",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: "8px",
+                      color: "#999",
+                      marginTop: "4px",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    📱 Scanner pour
+                    <br />
+                    suivre la commande
+                  </div>
+                </div>
+
+                {/* Infos */}
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: "800",
+                      color: "#0a0a0f",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {labelOrder.customer}
+                  </div>
+                  <div
+                    style={{ fontSize: "11px", color: "#444", lineHeight: 1.7 }}
+                  >
+                    <div>📍 {labelOrder.address}</div>
+                    <div>
+                      🕒 <strong>Créneau :</strong> {labelOrder.deliverySlot}
+                    </div>
+                    <div style={{ marginTop: "4px" }}>
+                      📦{" "}
+                      {labelOrder.items
+                        .map((i) => `${i.name} (${i.size}) ×${i.qty}`)
+                        .join(", ")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                style={{
+                  background: "#f8f7f4",
+                  padding: "8px 16px",
+                  textAlign: "center",
+                  fontSize: "9px",
+                  color: "#aaa",
+                  borderTop: "1px solid #eee",
+                }}
+              >
+                LIVRR · Luxe livré en moins d'1 heure · livrr.fr
+              </div>
+            </div>
+
+            {/* Boutons */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn-gold"
+                style={{ flex: 2, fontSize: "12px" }}
+                onClick={() => {
+                  setShowLabelModal(false);
+                  printLabel(labelOrder);
+                }}
+              >
+                🖨️ Imprimer maintenant
+              </button>
+              <button
+                className="btn-outline"
+                style={{ flex: 1, fontSize: "12px" }}
+                onClick={() => setShowLabelModal(false)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL ACCEPTATION ── */}
       {showAcceptModal && (
         <div
           style={{
@@ -1074,8 +1528,7 @@ export default function Orders() {
                 lineHeight: 1.6,
               }}
             >
-              L'acceptation déclenche le délai de livraison. Assignez un vendeur
-              responsable de la préparation.
+              Assignez un vendeur responsable de la préparation.
             </p>
             <label className="label">Vendeur responsable *</label>
             <div
@@ -1161,7 +1614,7 @@ export default function Orders() {
         </div>
       )}
 
-      {/* MODAL REFUS */}
+      {/* ── MODAL REFUS ── */}
       {showRefusModal && (
         <div
           style={{
@@ -1216,8 +1669,7 @@ export default function Orders() {
                 lineHeight: 1.6,
               }}
             >
-              Le client sera notifié et remboursé automatiquement. Le motif est{" "}
-              <strong>obligatoire</strong>.
+              Motif <strong>obligatoire</strong> — le client sera remboursé.
             </p>
             <label className="label">Motif du refus *</label>
             <div
@@ -1281,7 +1733,7 @@ export default function Orders() {
         </div>
       )}
 
-      {/* MODAL ANNULATION */}
+      {/* ── MODAL ANNULATION ── */}
       {showCancelModal && (
         <div
           style={{
@@ -1336,13 +1788,12 @@ export default function Orders() {
                 lineHeight: 1.6,
               }}
             >
-              Annulation irréversible après acceptation. Motif{" "}
-              <strong>obligatoire</strong>.
+              Motif <strong>obligatoire</strong>.
             </p>
             <label className="label">Motif de l'annulation *</label>
             <textarea
               className="input-field"
-              placeholder="Ex: Produit introuvable en rayon après acceptation..."
+              placeholder="Ex: Produit introuvable après acceptation..."
               value={motifCancel}
               onChange={(e) => setMotifCancel(e.target.value)}
               rows={3}
