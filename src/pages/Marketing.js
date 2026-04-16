@@ -6,6 +6,7 @@ const INITIAL_COUPONS = [
   {
     id: 1,
     code: "BIENVENUE10",
+    createdBy: "boutique",
     type: "percentage",
     value: 10,
     minOrder: 50,
@@ -19,6 +20,7 @@ const INITIAL_COUPONS = [
   {
     id: 2,
     code: "LIVRR2026",
+    createdBy: "boutique",
     type: "fixed",
     value: 5,
     minOrder: 30,
@@ -32,6 +34,7 @@ const INITIAL_COUPONS = [
   {
     id: 3,
     code: "SANDRO20",
+    createdBy: "boutique",
     type: "percentage",
     value: 20,
     minOrder: 150,
@@ -45,6 +48,7 @@ const INITIAL_COUPONS = [
   {
     id: 4,
     code: "RUSH15",
+    createdBy: "boutique",
     type: "fixed",
     value: 15,
     minOrder: 80,
@@ -54,6 +58,34 @@ const INITIAL_COUPONS = [
     expiry: "2026-04-10",
     active: true,
     createdAt: "2026-03-15",
+  },
+  {
+    id: 5,
+    code: "LIVRR_VIP20",
+    createdBy: "livrr",
+    type: "percentage",
+    value: 20,
+    minOrder: 100,
+    usage: 48,
+    maxUsage: 300,
+    maxUsagePerUser: 1,
+    expiry: "2026-12-31",
+    active: true,
+    createdAt: "2026-03-01",
+  },
+  {
+    id: 6,
+    code: "INFLUENCER15",
+    createdBy: "livrr",
+    type: "percentage",
+    value: 15,
+    minOrder: 0,
+    usage: 112,
+    maxUsage: 500,
+    maxUsagePerUser: 1,
+    expiry: "2026-06-30",
+    active: true,
+    createdAt: "2026-02-14",
   },
 ];
 
@@ -147,13 +179,11 @@ export default function Marketing() {
   const [coupons, setCoupons] = useState(INITIAL_COUPONS);
   const [history, setHistory] = useState(INITIAL_HISTORY);
 
-  // Modals
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [couponForm, setCouponForm] = useState(EMPTY_COUPON);
   const [promoForm, setPromoForm] = useState(EMPTY_PROMO);
 
-  // Recherche globale
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -166,6 +196,13 @@ export default function Marketing() {
 
   // --- COUPONS ---
   const toggleCoupon = (id) => {
+    const coupon = coupons.find((c) => c.id === id);
+    if (coupon?.createdBy === "livrr") {
+      return toast.error(
+        "Ce coupon a été créé par LIVRR — vous ne pouvez pas le modifier.",
+        { icon: "🔒" }
+      );
+    }
     setCoupons((prev) =>
       prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
     );
@@ -173,6 +210,13 @@ export default function Marketing() {
   };
 
   const deleteCoupon = (id) => {
+    const coupon = coupons.find((c) => c.id === id);
+    if (coupon?.createdBy === "livrr") {
+      return toast.error(
+        "Ce coupon a été créé par LIVRR — impossible de le supprimer.",
+        { icon: "🔒" }
+      );
+    }
     setCoupons((prev) => prev.filter((c) => c.id !== id));
     toast.success("Coupon supprimé");
   };
@@ -185,6 +229,7 @@ export default function Marketing() {
       id: Date.now(),
       usage: 0,
       active: true,
+      createdBy: "boutique",
       createdAt: new Date().toISOString().split("T")[0],
       value: parseFloat(couponForm.value),
       minOrder: parseFloat(couponForm.minOrder) || 0,
@@ -206,7 +251,6 @@ export default function Marketing() {
       !promoForm.endDate
     )
       return toast.error("Tous les champs sont obligatoires");
-
     const today = new Date().toISOString().split("T")[0];
     const status =
       promoForm.startDate > today
@@ -214,7 +258,6 @@ export default function Marketing() {
         : promoForm.endDate >= today
         ? "en cours"
         : "terminée";
-
     const promo = {
       ...promoForm,
       id: "h" + Date.now(),
@@ -476,6 +519,7 @@ export default function Marketing() {
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
+                        flexWrap: "wrap",
                       }}
                     >
                       <div
@@ -492,7 +536,56 @@ export default function Marketing() {
                       >
                         {c.code}
                       </div>
+                      {/* Badge créateur */}
+                      {c.createdBy === "livrr" ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "2px 8px",
+                            borderRadius: "20px",
+                            fontSize: "10px",
+                            fontWeight: "700",
+                            background: "#0A0A0F",
+                            color: "#C9A96E",
+                            border: "1px solid rgba(201,169,110,0.3)",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          ✦ LIVRR
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "2px 8px",
+                            borderRadius: "20px",
+                            fontSize: "10px",
+                            fontWeight: "700",
+                            background: "rgba(201,169,110,0.08)",
+                            color: "var(--gold-dark)",
+                            border: "1px solid rgba(201,169,110,0.2)",
+                          }}
+                        >
+                          🏪 Boutique
+                        </span>
+                      )}
                     </div>
+                    {c.createdBy === "livrr" && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "var(--gray)",
+                          marginTop: "4px",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Créé par LIVRR — lecture seule
+                      </div>
+                    )}
                   </td>
                   <td>
                     <span
@@ -515,7 +608,6 @@ export default function Marketing() {
                     <div style={{ fontSize: "10px", color: "var(--gray)" }}>
                       / {c.maxUsage} max total
                     </div>
-                    {/* Barre de progression */}
                     <div
                       style={{
                         width: "60px",
@@ -594,20 +686,40 @@ export default function Marketing() {
                         justifyContent: "flex-end",
                       }}
                     >
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: "12px", padding: "6px 12px" }}
-                        onClick={() => toggleCoupon(c.id)}
-                      >
-                        {c.active ? "Désactiver" : "Activer"}
-                      </button>
-                      <button
-                        className="btn-danger"
-                        style={{ fontSize: "12px", padding: "6px 12px" }}
-                        onClick={() => deleteCoupon(c.id)}
-                      >
-                        ✕
-                      </button>
+                      {c.createdBy === "livrr" ? (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--gray)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "6px 10px",
+                            borderRadius: "8px",
+                            background: "rgba(0,0,0,0.04)",
+                            border: "1px solid rgba(0,0,0,0.07)",
+                          }}
+                        >
+                          🔒 Lecture seule
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            className="btn-outline"
+                            style={{ fontSize: "12px", padding: "6px 12px" }}
+                            onClick={() => toggleCoupon(c.id)}
+                          >
+                            {c.active ? "Désactiver" : "Activer"}
+                          </button>
+                          <button
+                            className="btn-danger"
+                            style={{ fontSize: "12px", padding: "6px 12px" }}
+                            onClick={() => deleteCoupon(c.id)}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -650,7 +762,6 @@ export default function Marketing() {
               <option value="fixed">Montant fixe</option>
             </select>
           </div>
-
           <div
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
@@ -667,7 +778,6 @@ export default function Marketing() {
                     padding: "20px 24px",
                   }}
                 >
-                  {/* Pastille statut */}
                   <div
                     style={{
                       width: "48px",
@@ -689,8 +799,6 @@ export default function Marketing() {
                       }}
                     />
                   </div>
-
-                  {/* Infos promo */}
                   <div style={{ flex: 1 }}>
                     <div
                       style={{
@@ -714,8 +822,8 @@ export default function Marketing() {
                       {new Date(h.startDate).toLocaleDateString("fr-FR", {
                         day: "2-digit",
                         month: "short",
-                      })}
-                      {" → "}
+                      })}{" "}
+                      →{" "}
                       {new Date(h.endDate).toLocaleDateString("fr-FR", {
                         day: "2-digit",
                         month: "short",
@@ -723,8 +831,6 @@ export default function Marketing() {
                       })}
                     </div>
                   </div>
-
-                  {/* Réduction */}
                   <div style={{ textAlign: "center", minWidth: "80px" }}>
                     <div
                       style={{
@@ -749,8 +855,6 @@ export default function Marketing() {
                       {h.type === "percentage" ? "Remise" : "Fixe"}
                     </div>
                   </div>
-
-                  {/* Stats */}
                   <div style={{ display: "flex", gap: "24px" }}>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontWeight: "700", fontSize: "18px" }}>
@@ -813,7 +917,7 @@ export default function Marketing() {
         </>
       )}
 
-      {/* ===== RECHERCHE GLOBALE ===== */}
+      {/* ===== RECHERCHE ===== */}
       {tab === "recherche" && (
         <>
           <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
@@ -836,8 +940,6 @@ export default function Marketing() {
               <option value="fixed">Montant fixe</option>
             </select>
           </div>
-
-          {/* Résultats coupons */}
           {filteredCoupons.length > 0 && (
             <>
               <div
@@ -860,6 +962,7 @@ export default function Marketing() {
                   <thead>
                     <tr>
                       <th>CODE</th>
+                      <th>CRÉATEUR</th>
                       <th>RÉDUCTION</th>
                       <th>UTILISATIONS</th>
                       <th>EXPIRATION</th>
@@ -881,6 +984,43 @@ export default function Marketing() {
                           >
                             {c.code}
                           </span>
+                        </td>
+                        <td>
+                          {c.createdBy === "livrr" ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "2px 8px",
+                                borderRadius: "20px",
+                                fontSize: "10px",
+                                fontWeight: "700",
+                                background: "#0A0A0F",
+                                color: "#C9A96E",
+                                border: "1px solid rgba(201,169,110,0.3)",
+                              }}
+                            >
+                              ✦ LIVRR
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "2px 8px",
+                                borderRadius: "20px",
+                                fontSize: "10px",
+                                fontWeight: "700",
+                                background: "rgba(201,169,110,0.08)",
+                                color: "var(--gold-dark)",
+                                border: "1px solid rgba(201,169,110,0.2)",
+                              }}
+                            >
+                              🏪 Boutique
+                            </span>
+                          )}
                         </td>
                         <td style={{ fontWeight: "700" }}>
                           {c.type === "percentage"
@@ -918,8 +1058,6 @@ export default function Marketing() {
               </div>
             </>
           )}
-
-          {/* Résultats historique */}
           {filteredHistory.length > 0 && (
             <>
               <div
@@ -1010,7 +1148,6 @@ export default function Marketing() {
               </div>
             </>
           )}
-
           {filteredCoupons.length === 0 &&
             filteredHistory.length === 0 &&
             search && (
@@ -1031,7 +1168,6 @@ export default function Marketing() {
                 </div>
               </div>
             )}
-
           {!search && (
             <div
               className="card"
@@ -1051,7 +1187,7 @@ export default function Marketing() {
         </>
       )}
 
-      {/* ====== MODAL COUPON ====== */}
+      {/* MODAL COUPON */}
       {showCouponModal && (
         <div style={overlayStyle} onClick={() => setShowCouponModal(false)}>
           <div
@@ -1201,7 +1337,7 @@ export default function Marketing() {
         </div>
       )}
 
-      {/* ====== MODAL PROMOTION ====== */}
+      {/* MODAL PROMOTION */}
       {showPromoModal && (
         <div style={overlayStyle} onClick={() => setShowPromoModal(false)}>
           <div
