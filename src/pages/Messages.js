@@ -122,6 +122,7 @@ export default function Messages() {
   const [showRapides, setShowRapides] = useState(false);
   const [showCommandes, setShowCommandes] = useState(false);
   const [search, setSearch] = useState("");
+  const [autoReplied, setAutoReplied] = useState(new Set()); // track chats déjà auto-répondus
   const scrollRef = useRef(null);
 
   const activeChat = chats.find((c) => c.id === activeId);
@@ -132,6 +133,48 @@ export default function Messages() {
       prev.map((c) => (c.id === activeId ? { ...c, unread: 0 } : c))
     );
   }, [activeId, activeChat?.messages?.length]);
+
+  // Déclenche l'auto-réponse LIVRR quand un client envoie un message
+  // (simulé ici côté boutique — en prod ce serait côté serveur)
+  const triggerAutoReply = (chatId) => {
+    // On n'envoie l'auto-réponse qu'une seule fois par conversation
+    if (autoReplied.has(chatId)) return;
+    setAutoReplied((prev) => new Set([...prev, chatId]));
+
+    const autoMsg = {
+      id: Date.now() + 1,
+      sender: "boutique",
+      text: "Bonjour ! Nous avons bien reçu votre message et notre équipe revient vers vous dans les meilleurs délais. Merci de votre patience.",
+      time: new Date().toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      isAuto: true,
+    };
+
+    setTimeout(() => {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chatId
+            ? {
+                ...c,
+                messages: [...c.messages, autoMsg],
+                lastMsg: autoMsg.text,
+                time: "maintenant",
+              }
+            : c
+        )
+      );
+      toast(
+        "💬 Réponse automatique envoyée à " +
+          (chats.find((c) => c.id === chatId)?.customer || ""),
+        {
+          icon: "🤖",
+          duration: 3000,
+        }
+      );
+    }, 1500); // délai de 1.5s pour simuler la réponse automatique
+  };
 
   const send = (text) => {
     if (!text.trim()) return;
@@ -158,6 +201,36 @@ export default function Messages() {
     );
     setInput("");
     setShowRapides(false);
+  };
+
+  // Simule la réception d'un message client (pour la démo)
+  const simulateClientMessage = () => {
+    const chat = chats.find((c) => c.id === activeId);
+    if (!chat) return;
+    const clientMsg = {
+      id: Date.now(),
+      sender: "client",
+      text: "Bonjour, j'aurais besoin d'informations sur ma commande.",
+      time: new Date().toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === activeId
+          ? {
+              ...c,
+              messages: [...c.messages, clientMsg],
+              lastMsg: clientMsg.text,
+              time: "maintenant",
+              unread: 1,
+            }
+          : c
+      )
+    );
+    // Déclenche l'auto-réponse
+    triggerAutoReply(activeId);
   };
 
   const handleSend = (e) => {
@@ -408,6 +481,30 @@ export default function Messages() {
                 </div>
               </div>
             </div>
+            <button
+              onClick={simulateClientMessage}
+              title="Simuler un message client (démo)"
+              style={{
+                padding: "7px 12px",
+                borderRadius: "8px",
+                border: "1px solid rgba(0,0,0,0.1)",
+                background: "rgba(0,0,0,0.03)",
+                fontSize: "11px",
+                fontWeight: "600",
+                color: "var(--gray)",
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(0,0,0,0.07)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(0,0,0,0.03)")
+              }
+            >
+              💬 Simuler client
+            </button>
             <button
               onClick={() => setShowCommandes(!showCommandes)}
               style={{
