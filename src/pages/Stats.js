@@ -58,6 +58,22 @@ const HEURES_POINTE = [
   { h: "20h", commandes: 4 },
 ];
 
+// Données qualité commandes
+const QUALITE_COMMANDES = [
+  { mois: "Nov", livrees: 287, refusees: 12, annulees: 8, retard: 15 },
+  { mois: "Déc", livrees: 341, refusees: 18, annulees: 11, retard: 22 },
+  { mois: "Jan", livrees: 298, refusees: 9, annulees: 6, retard: 18 },
+  { mois: "Fév", livrees: 312, refusees: 14, annulees: 9, retard: 12 },
+  { mois: "Mar", livrees: 356, refusees: 11, annulees: 7, retard: 10 },
+  { mois: "Avr", livrees: 389, refusees: 8, annulees: 5, retard: 8 },
+];
+
+const TAUX_QUALITE = {
+  refusees: { count: 72, pct: "3.2%", trend: "-0.8%", up: true },
+  annulees: { count: 46, pct: "2.1%", trend: "-0.3%", up: true },
+  retard: { count: 85, pct: "3.8%", trend: "-1.2%", up: true },
+};
+
 const TOP_PRODUITS = [
   {
     name: "Robe Midi Fleurie",
@@ -347,6 +363,7 @@ export default function Stats() {
           { key: "ca", label: "Chiffre d'affaires" },
           { key: "clients", label: "Clients actifs" },
           { key: "pointe", label: "Heures de pointe" },
+          { key: "qualite", label: "Qualité commandes" },
         ].map((t) => (
           <button
             key={t.key}
@@ -623,6 +640,353 @@ export default function Stats() {
         </div>
       )}
 
+      {/* GRAPHIQUE QUALITE COMMANDES */}
+      {activeTab === "qualite" && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+            marginBottom: "28px",
+          }}
+        >
+          {/* KPIs qualité */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: "16px",
+            }}
+          >
+            {[
+              {
+                label: "Commandes refusées",
+                key: "refusees",
+                icon: "✕",
+                color: "var(--error)",
+                bg: "var(--error-bg)",
+                desc: "Rupture stock, hors zone, délai impossible",
+              },
+              {
+                label: "Commandes annulées",
+                key: "annulees",
+                icon: "◌",
+                color: "var(--warning)",
+                bg: "var(--warning-bg)",
+                desc: "Annulées après acceptation",
+              },
+              {
+                label: "Commandes en retard",
+                key: "retard",
+                icon: "⏱",
+                color: "var(--info)",
+                bg: "var(--info-bg)",
+                desc: "Délai de livraison dépassé",
+              },
+            ].map((s) => {
+              const d = TAUX_QUALITE[s.key];
+              return (
+                <div
+                  key={s.key}
+                  className="card"
+                  style={{
+                    padding: "20px 24px",
+                    borderLeft: `3px solid ${s.color}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          color: "var(--gray)",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {s.label}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: "36px",
+                          fontWeight: "300",
+                          color: s.color,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {d.count}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "10px",
+                        background: s.bg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "18px",
+                        color: s.color,
+                      }}
+                    >
+                      {s.icon}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: "12px", color: "var(--gray)" }}>
+                      {d.pct} des commandes
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#10B981",
+                      }}
+                    >
+                      ↓ {d.trend}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      fontSize: "11px",
+                      color: "var(--gray)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {s.desc}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Graphique évolution qualité */}
+          <div className="card">
+            <div style={{ marginBottom: "20px" }}>
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "22px",
+                  fontWeight: "400",
+                }}
+              >
+                Évolution de la qualité
+              </h3>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "var(--gray)",
+                  marginTop: "2px",
+                }}
+              >
+                Commandes refusées, annulées et en retard par mois
+              </p>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={QUALITE_COMMANDES}
+                margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                barGap={4}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(0,0,0,0.05)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="mois"
+                  tick={{ fontSize: 11, fill: "#aaa" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#aaa" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="refusees"
+                  name="Refusées"
+                  fill="#EF4444"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="annulees"
+                  name="Annulées"
+                  fill="#F59E0B"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="retard"
+                  name="En retard"
+                  fill="#3B82F6"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+            <div
+              style={{
+                marginTop: "16px",
+                padding: "12px 16px",
+                background: "rgba(59,130,246,0.06)",
+                borderRadius: "8px",
+                fontSize: "13px",
+                color: "var(--gray)",
+              }}
+            >
+              💡 Le taux de commandes refusées a baissé de{" "}
+              <strong style={{ color: "var(--noir)" }}>0.8%</strong> ce mois —
+              continuez à maintenir votre stock à jour.
+            </div>
+          </div>
+
+          {/* Tableau détail motifs */}
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid rgba(0,0,0,0.06)",
+              }}
+            >
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "20px",
+                  fontWeight: "400",
+                }}
+              >
+                Motifs de refus & annulation
+              </h3>
+            </div>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Motif</th>
+                  <th>Type</th>
+                  <th>Occurrences</th>
+                  <th>Impact CA perdu</th>
+                  <th>Tendance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {
+                    motif: "Rupture de stock",
+                    type: "Refus",
+                    count: 28,
+                    ca: "8 400 €",
+                    trend: "-12%",
+                    up: true,
+                  },
+                  {
+                    motif: "Hors zone de livraison",
+                    type: "Refus",
+                    count: 19,
+                    ca: "5 700 €",
+                    trend: "-5%",
+                    up: true,
+                  },
+                  {
+                    motif: "Délai impossible",
+                    type: "Refus",
+                    count: 14,
+                    ca: "4 200 €",
+                    trend: "+2%",
+                    up: false,
+                  },
+                  {
+                    motif: "Produit introuvable",
+                    type: "Annulation",
+                    count: 22,
+                    ca: "6 600 €",
+                    trend: "-8%",
+                    up: true,
+                  },
+                  {
+                    motif: "Erreur de commande",
+                    type: "Annulation",
+                    count: 15,
+                    ca: "4 500 €",
+                    trend: "-3%",
+                    up: true,
+                  },
+                  {
+                    motif: "Coursier indisponible",
+                    type: "Retard",
+                    count: 42,
+                    ca: "—",
+                    trend: "-15%",
+                    up: true,
+                  },
+                ].map((row, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: "600" }}>{row.motif}</td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "2px 10px",
+                          borderRadius: "20px",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          background:
+                            row.type === "Refus"
+                              ? "var(--error-bg)"
+                              : row.type === "Annulation"
+                              ? "var(--warning-bg)"
+                              : "var(--info-bg)",
+                          color:
+                            row.type === "Refus"
+                              ? "var(--error)"
+                              : row.type === "Annulation"
+                              ? "var(--warning)"
+                              : "var(--info)",
+                        }}
+                      >
+                        {row.type}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: "700" }}>{row.count}</td>
+                    <td style={{ color: "var(--error)", fontWeight: "600" }}>
+                      {row.ca}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          color: row.up ? "#10B981" : "#EF4444",
+                        }}
+                      >
+                        {row.up ? "↓" : "↑"} {row.trend}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* TOP PRODUITS + STATS RAPIDES */}
       <div
         style={{
@@ -766,6 +1130,27 @@ export default function Stats() {
               sub: "sur la période",
             },
             {
+              label: "Commandes refusées",
+              value: "72",
+              icon: "✕",
+              sub: "3.2% — ↓ vs période préc.",
+              color: "var(--error)",
+            },
+            {
+              label: "Commandes annulées",
+              value: "46",
+              icon: "◌",
+              sub: "2.1% — ↓ vs période préc.",
+              color: "var(--warning)",
+            },
+            {
+              label: "Commandes en retard",
+              value: "85",
+              icon: "⏱",
+              sub: "3.8% — ↓ vs période préc.",
+              color: "var(--info)",
+            },
+            {
               label: "Taux de conversion",
               value: "4.2%",
               icon: "📈",
@@ -839,6 +1224,7 @@ export default function Stats() {
                     fontFamily: "var(--font-display)",
                     fontSize: "22px",
                     fontWeight: "300",
+                    color: s.color || "var(--noir)",
                   }}
                 >
                   {s.value}

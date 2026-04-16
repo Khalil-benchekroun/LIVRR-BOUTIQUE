@@ -12,6 +12,7 @@ const INIT_CLIENTS = [
     loyal: true,
     adresseLivraison: "42 Avenue Montaigne, 75008 Paris",
     adresseFacturation: "42 Avenue Montaigne, 75008 Paris",
+    dateNaissance: "1990-03-15",
   },
   {
     _id: "c2",
@@ -24,6 +25,7 @@ const INIT_CLIENTS = [
     loyal: true,
     adresseLivraison: "18 Rue du Faubourg Saint-Honoré, 75008 Paris",
     adresseFacturation: "5 Boulevard Haussmann, 75009 Paris",
+    dateNaissance: "1988-07-22",
   },
   {
     _id: "c3",
@@ -36,6 +38,7 @@ const INIT_CLIENTS = [
     loyal: true,
     adresseLivraison: "12 Place Vendôme, 75001 Paris",
     adresseFacturation: "12 Place Vendôme, 75001 Paris",
+    dateNaissance: "1985-11-08",
   },
   {
     _id: "c4",
@@ -48,6 +51,7 @@ const INIT_CLIENTS = [
     loyal: false,
     adresseLivraison: "",
     adresseFacturation: "",
+    dateNaissance: "",
   },
   {
     _id: "c5",
@@ -60,6 +64,7 @@ const INIT_CLIENTS = [
     loyal: false,
     adresseLivraison: "",
     adresseFacturation: "",
+    dateNaissance: "",
   },
 ];
 
@@ -115,6 +120,7 @@ const EMPTY_CLIENT = {
   name: "",
   email: "",
   phone: "",
+  dateNaissance: "",
   adresseLivraison: "",
   adresseFacturation: "",
   memeAdresse: true,
@@ -442,6 +448,18 @@ export default function Clients() {
                 value={newClient.phone}
                 onChange={(e) =>
                   setNewClient({ ...newClient, phone: e.target.value })
+                }
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+            <div>
+              <label className="label">Date de naissance</label>
+              <input
+                className="input-field"
+                type="date"
+                value={newClient.dateNaissance}
+                onChange={(e) =>
+                  setNewClient({ ...newClient, dateNaissance: e.target.value })
                 }
                 style={{ marginBottom: 0 }}
               />
@@ -888,6 +906,7 @@ export default function Clients() {
               <th>Client</th>
               <th>Email</th>
               <th>Téléphone</th>
+              <th>Date de naissance</th>
               <th>Adresse livraison</th>
               <th>Adresse facturation</th>
               <th>Commandes</th>
@@ -956,6 +975,17 @@ export default function Clients() {
                 <td style={{ color: "var(--gray)", fontSize: "13px" }}>
                   {c.phone || "—"}
                 </td>
+                <td style={{ color: "var(--gray)", fontSize: "13px" }}>
+                  {c.dateNaissance ? (
+                    new Date(c.dateNaissance).toLocaleDateString("fr-FR", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  ) : (
+                    <span style={{ opacity: 0.35 }}>—</span>
+                  )}
+                </td>
                 <td
                   style={{
                     color: "var(--gray)",
@@ -1016,7 +1046,7 @@ export default function Clients() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   style={{
                     textAlign: "center",
                     padding: "32px",
@@ -1121,6 +1151,15 @@ export default function Clients() {
                       : "—",
                 },
                 { label: "Dernière commande", value: showDetail.lastOrder },
+                {
+                  label: "Date de naissance",
+                  value: showDetail.dateNaissance
+                    ? new Date(showDetail.dateNaissance).toLocaleDateString(
+                        "fr-FR",
+                        { day: "2-digit", month: "long", year: "numeric" }
+                      )
+                    : "—",
+                },
                 {
                   label: "Profil",
                   value: showDetail.loyal ? "⭐ Fidèle" : "Nouveau",
