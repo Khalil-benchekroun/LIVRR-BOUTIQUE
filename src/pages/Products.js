@@ -7,10 +7,8 @@ const ABONNEMENT_QUOTAS = {
   signature: { label: "Signature", quota: 100, color: "#3B82F6" },
   prestige: { label: "Prestige", quota: 300, color: "#C9A96E" },
 };
-// Abonnement courant (sera branché Supabase)
 const CURRENT_ABONNEMENT = "classic";
 
-// --- CONFIGURATION DES CATÉGORIES LIVRR ---
 const CATEGORIES = [
   "Vêtements",
   "Chaussures",
@@ -19,7 +17,6 @@ const CATEGORIES = [
   "Épicerie Fine",
 ];
 
-// --- DONNÉES INITIALES POUR LE TEST ---
 const today = new Date().toLocaleDateString("fr-FR");
 const nowStr = () =>
   new Date().toLocaleTimeString("fr-FR", {
@@ -155,18 +152,31 @@ export default function Products() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [filterCat, setFilterCat] = useState("all");
 
+  // ── États manquants ajoutés ──
+  const [showVariantesModal, setShowVariantesModal] = useState(null); // null | productId
+  const [showHistoModal, setShowHistoModal] = useState(false);
+  const [histoProduct, setHistoProduct] = useState(null);
+  const [stockEdit, setStockEdit] = useState({});
+  const [newVariante, setNewVariante] = useState({
+    taille: "",
+    couleur: "",
+    stock: "",
+  });
+
+  // Modération IA
+  const [moderating, setModerating] = useState(false);
+  const [moderationResult, setModerationResult] = useState(null);
+
   const fileInputRef = useRef(null);
   const abonnement = ABONNEMENT_QUOTAS[CURRENT_ABONNEMENT];
   const quota = abonnement.quota;
   const isQuotaAtteint = products.length >= quota;
   const isQuotaProche = products.length >= quota * 0.9;
 
-  // --- GESTION DES CHAMPS DU FORMULAIRE ---
   const handleChange = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
   };
 
-  // --- OUVERTURE MODAL (NOUVEAU / MODIF) ---
   const openNew = () => {
     setForm(EMPTY_FORM);
     setEditProduct(null);
@@ -178,10 +188,6 @@ export default function Products() {
     setForm({ ...product });
     setShowModal(true);
   };
-
-  // --- GESTION DE L'IMAGE + MODÉRATION IA ---
-  const [moderating, setModerating] = useState(false);
-  const [moderationResult, setModerationResult] = useState(null); // null | "approved" | "rejected"
 
   const BLOCKED_KEYWORDS = [
     "nude",
@@ -196,7 +202,6 @@ export default function Products() {
   const moderateImage = (file, dataUrl) => {
     setModerating(true);
     setModerationResult(null);
-    // Simulation modération IA (en prod : appel API Google Vision / AWS Rekognition)
     setTimeout(() => {
       const fileName = file.name.toLowerCase();
       const isBlocked = BLOCKED_KEYWORDS.some((k) => fileName.includes(k));
@@ -215,7 +220,7 @@ export default function Products() {
           duration: 2000,
         });
       }
-    }, 1800); // simule le temps d'analyse IA
+    }, 1800);
   };
 
   const handleImageChange = (e) => {
@@ -226,11 +231,9 @@ export default function Products() {
     reader.readAsDataURL(file);
   };
 
-  // --- SAUVEGARDE (CREATE & UPDATE) ---
   const handleSave = () => {
     if (!form.name || !form.price)
       return toast.error("Le nom et le prix sont obligatoires");
-    // Blocage quota CDC
     if (!editProduct && products.length >= quota) {
       return toast.error(
         `Quota atteint — Votre abonnement ${abonnement.label} est limité à ${quota} produits. Passez à l'offre supérieure depuis les Paramètres.`,
@@ -249,7 +252,6 @@ export default function Products() {
     };
 
     if (editProduct) {
-      // Enregistrer le mouvement de stock si changement
       const oldStock = editProduct.stock || 0;
       if (oldStock !== newStock) {
         const mouvement = {
@@ -278,7 +280,6 @@ export default function Products() {
     setShowModal(false);
   };
 
-  // --- IMPORTATION MASSIVE CSV ---
   const handleCSVImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -328,8 +329,6 @@ export default function Products() {
     reader.readAsText(file);
   };
 
-  // --- FILTRAGE ---
-  // Fonctions variantes
   const addVariante = (productId) => {
     if (!newVariante.taille) return toast.error("La taille est requise");
     setProducts((prev) =>
@@ -388,7 +387,6 @@ export default function Products() {
     toast.success(`Stock mis à jour : ${avant} → ${apres}`);
   };
 
-  // Photos multiples
   const handleMultiPhotos = (e, productId) => {
     const files = Array.from(e.target.files);
     files.forEach((file) => {
@@ -448,7 +446,6 @@ export default function Products() {
             style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}
           >
             Gestion de l'inventaire — {products.length} références
-            {/* Barre quota */}
             <div style={{ marginTop: "8px" }}>
               <div
                 style={{
@@ -567,7 +564,7 @@ export default function Products() {
         </div>
       </div>
 
-      {/* RECHERCHE ET FILTRES PAR CATÉGORIE */}
+      {/* FILTRES */}
       <div
         style={{
           display: "flex",
@@ -584,7 +581,6 @@ export default function Products() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ maxWidth: "220px", marginBottom: 0 }}
         />
-
         <button
           onClick={() => setFilterCat("all")}
           style={{
@@ -601,7 +597,6 @@ export default function Products() {
         >
           Tous
         </button>
-
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
@@ -623,7 +618,7 @@ export default function Products() {
         ))}
       </div>
 
-      {/* TABLEAU DES PRODUITS */}
+      {/* TABLEAU */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <table className="table">
           <thead>
@@ -725,7 +720,6 @@ export default function Products() {
                     </button>
                     <button
                       className="btn-outline"
-                      title="Variantes & photos"
                       style={{ fontSize: "12px", padding: "7px 12px" }}
                       onClick={() => setShowVariantesModal(product._id)}
                     >
@@ -733,7 +727,6 @@ export default function Products() {
                     </button>
                     <button
                       className="btn-outline"
-                      title="Historique des mouvements de stock"
                       style={{ fontSize: "12px", padding: "7px 12px" }}
                       onClick={() => {
                         setHistoProduct(product);
@@ -750,7 +743,7 @@ export default function Products() {
         </table>
       </div>
 
-      {/* MODAL D'ÉDITION ET AJOUT */}
+      {/* MODAL AJOUT / ÉDITION */}
       {showModal && (
         <div
           style={{
@@ -809,7 +802,7 @@ export default function Products() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "20px" }}
             >
-              {/* ZONE IMAGE + MODÉRATION IA */}
+              {/* Zone image */}
               <div
                 style={{
                   padding: "20px",
@@ -1055,7 +1048,7 @@ export default function Products() {
         </div>
       )}
 
-      {/* ── MODAL VARIANTES & PHOTOS MULTIPLES ── */}
+      {/* MODAL VARIANTES & PHOTOS */}
       {showVariantesModal &&
         (() => {
           const product = products.find((p) => p._id === showVariantesModal);
@@ -1086,7 +1079,6 @@ export default function Products() {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Header */}
                 <div
                   style={{
                     display: "flex",
@@ -1132,7 +1124,7 @@ export default function Products() {
                   </button>
                 </div>
 
-                {/* PHOTOS MULTIPLES */}
+                {/* Photos multiples */}
                 <div style={{ marginBottom: "24px" }}>
                   <div
                     style={{
@@ -1257,11 +1249,11 @@ export default function Products() {
                     }}
                   >
                     💡 La première photo est l'image principale visible par le
-                    client. Glissez pour réordonner.
+                    client.
                   </div>
                 </div>
 
-                {/* VARIANTES */}
+                {/* Variantes */}
                 <div>
                   <div
                     style={{
@@ -1275,8 +1267,6 @@ export default function Products() {
                   >
                     Variantes ({(product.variantes || []).length})
                   </div>
-
-                  {/* Liste variantes existantes */}
                   {(product.variantes || []).length > 0 && (
                     <div
                       style={{
@@ -1355,8 +1345,6 @@ export default function Products() {
                       ))}
                     </div>
                   )}
-
-                  {/* Ajouter variante */}
                   <div
                     style={{
                       padding: "14px",
@@ -1386,7 +1374,7 @@ export default function Products() {
                     >
                       <input
                         className="input-field"
-                        placeholder="Taille (S, M, L, XL…)"
+                        placeholder="Taille (S, M, L…)"
                         value={newVariante.taille}
                         onChange={(e) =>
                           setNewVariante({
@@ -1436,7 +1424,7 @@ export default function Products() {
           );
         })()}
 
-      {/* ── MODAL HISTORIQUE STOCK ── */}
+      {/* MODAL HISTORIQUE STOCK */}
       {showHistoModal &&
         histoProduct &&
         (() => {
@@ -1525,7 +1513,7 @@ export default function Products() {
                   </button>
                 </div>
 
-                {/* Mise à jour rapide du stock */}
+                {/* Mise à jour rapide */}
                 <div
                   style={{
                     padding: "14px",
@@ -1578,7 +1566,7 @@ export default function Products() {
                   </button>
                 </div>
 
-                {/* Historique des mouvements */}
+                {/* Historique mouvements */}
                 <div>
                   <div
                     style={{
