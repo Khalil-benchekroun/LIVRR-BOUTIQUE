@@ -1565,8 +1565,11 @@ export default function Settings() {
               >
                 <input
                   type="number"
+                  data-delai={d.key}
                   defaultValue={
-                    d.key === "standard" ? 10 : d.key === "large" ? 20 : 30
+                    d.key === "standard"
+                      ? parseInt(localStorage.getItem("livrr_delai_preparation") || "15")
+                      : d.key === "large" ? 20 : 30
                   }
                   min={5}
                   max={60}
@@ -1590,7 +1593,11 @@ export default function Settings() {
           <button
             className="btn-outline"
             style={{ width: "100%", marginTop: "14px", fontSize: "12px" }}
-            onClick={() => toast.success("Délais sauvegardés")}
+            onClick={() => {
+              const val = document.querySelector('input[data-delai="standard"]')?.value || "15";
+              localStorage.setItem("livrr_delai_preparation", val);
+              toast.success("Délais sauvegardés — Chronomètre mis à jour");
+            }}
           >
             Enregistrer les délais
           </button>

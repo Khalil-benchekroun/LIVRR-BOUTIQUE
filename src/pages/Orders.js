@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 /* ============================================================
@@ -37,6 +37,7 @@ const INITIAL_ORDERS = [
     customer: "Karim T.",
     total: 1079,
     status: "preparing",
+    startedAt: Date.now() - 25 * 60 * 1000,
     time: "Il y a 25 min",
     address: "Quartier Gauthier, Rue Mozart, Casablanca",
     deliverySlot: "Dès que possible",
@@ -195,6 +196,71 @@ const STATUS_CONFIG = {
     step: 0,
   },
 };
+
+/* ── Chronomètre de préparation ── */
+function Chronometre({ startTime, delaiMinutes = 15 }) {
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const start = startTime || Date.now();
+    const update = () => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    };
+    update();
+    intervalRef.current = setInterval(update, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [startTime]);
+
+  const totalSec   = delaiMinutes * 60;
+  const remaining  = totalSec - elapsed;
+  const isOver     = remaining < 0;
+  const isWarning  = remaining >= 0 && remaining < 120; // moins de 2 min
+  const absSec     = Math.abs(remaining);
+  const mins       = String(Math.floor(absSec / 60)).padStart(2, "0");
+  const secs       = String(absSec % 60).padStart(2, "0");
+  const pct        = Math.min(100, (elapsed / totalSec) * 100);
+
+  const color = isOver ? "#EF4444" : isWarning ? "#F59E0B" : "#10B981";
+  const bg    = isOver ? "rgba(239,68,68,0.08)" : isWarning ? "rgba(245,158,11,0.08)" : "rgba(16,185,129,0.08)";
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:"4px", minWidth:"120px" }}>
+      {/* Affichage temps */}
+      <div style={{
+        display:"flex", alignItems:"center", gap:"6px",
+        padding:"6px 12px", borderRadius:"8px",
+        background:bg, border:`1px solid ${color}33`,
+        animation: isOver ? "goldPulse 1s ease infinite" : "none",
+      }}>
+        <span style={{ fontSize:"13px" }}>
+          {isOver ? "🔴" : isWarning ? "🟡" : "🟢"}
+        </span>
+        <span style={{
+          fontFamily:"monospace", fontSize:"15px", fontWeight:"800",
+          color, letterSpacing:"1px",
+        }}>
+          {isOver ? "-" : ""}{mins}:{secs}
+        </span>
+        <span style={{ fontSize:"9px", color, fontWeight:"700", opacity:0.7 }}>
+          {isOver ? "RETARD" : "restant"}
+        </span>
+      </div>
+      {/* Barre progression */}
+      <div style={{ height:"3px", borderRadius:"2px", background:"rgba(0,0,0,0.06)", overflow:"hidden" }}>
+        <div style={{
+          height:"100%", borderRadius:"2px",
+          background: color,
+          width:`${pct}%`,
+          transition:"width 1s linear",
+        }} />
+      </div>
+      <div style={{ fontSize:"9px", color:"var(--gray)", textAlign:"right" }}>
+        Objectif : {delaiMinutes} min
+      </div>
+    </div>
+  );
+}
 
 const FILTERS = [
   { id: "all", label: "Toutes" },
@@ -594,7 +660,7 @@ export default function Orders() {
   const confirmAccept = () => {
     if (!selectedVendorId) return toast.error("Sélectionnez un vendeur");
     const vendor = INITIAL_STAFF.find((s) => s.id === selectedVendorId);
-    transition(pendingAcceptId, "preparing", { assignedVendor: vendor.name });
+    transition(pendingAcceptId, "preparing", { assignedVendor: vendor.name, startedAt: Date.now() });
     addHisto(pendingAcceptId, "Acceptée", vendor.name);
     addHisto(pendingAcceptId, "En préparation", vendor.name);
     toast.success(`Commande acceptée — Assignée à ${vendor.name}`, {
@@ -860,6 +926,16 @@ export default function Orders() {
                 <div style={{ marginBottom: "14px", overflowX: "auto" }}>
                   <OrderStepper status={order.status} />
                 </div>
+
+                {/* Chronomètre si en préparation */}
+                {order.status === "preparing" && (
+                  <div style={{ marginBottom:"12px" }}>
+                    <Chronometre
+                      startTime={order.startedAt}
+                      delaiMinutes={parseInt(localStorage.getItem("livrr_delai_preparation") || "15")}
+                    />
+                  </div>
+                )}
 
                 {/* Produits */}
                 <div
