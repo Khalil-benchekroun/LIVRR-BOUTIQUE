@@ -27,13 +27,12 @@ const IconTiktok = () => (
   </svg>
 );
 
-// ── Couleurs officielles des RS ──
 const SOCIAL_LINKS = [
   {
     label: "Instagram",
     href: "https://www.instagram.com/livrr_officiel/",
     Icon: IconInstagram,
-    color: "#E1306C",        // Rose Instagram officiel
+    color: "#E1306C",
     bgHover: "rgba(225,48,108,0.12)",
     borderHover: "rgba(225,48,108,0.5)",
   },
@@ -41,7 +40,7 @@ const SOCIAL_LINKS = [
     label: "Facebook",
     href: "https://www.facebook.com/share/1BHZNBjNig/",
     Icon: IconFacebook,
-    color: "#1877F2",        // Bleu Facebook officiel
+    color: "#1877F2",
     bgHover: "rgba(24,119,242,0.12)",
     borderHover: "rgba(24,119,242,0.5)",
   },
@@ -49,7 +48,7 @@ const SOCIAL_LINKS = [
     label: "TikTok",
     href: "https://www.tiktok.com/@livrr.officiel?_r=1&_t=ZN-95aXSqovZXq",
     Icon: IconTiktok,
-    color: "#ffffff",        // TikTok = blanc sur fond sombre
+    color: "#ffffff",
     bgHover: "rgba(255,255,255,0.1)",
     borderHover: "rgba(255,255,255,0.4)",
   },
@@ -71,10 +70,6 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success("Bienvenue sur votre espace boutique", {
-        style: { fontFamily:"DM Sans, sans-serif", background:"#0A0A0F", color:"#fff", border:"1px solid rgba(201,169,110,0.3)" },
-        icon: "✦",
-      });
       navigate("/");
     } catch (err) {
       toast.error("Identifiants incorrects");
@@ -108,26 +103,59 @@ export default function Login() {
         {/* Formulaire */}
         <form onSubmit={handleLogin} style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
 
-          {/* Email */}
+          {/* Identifiant */}
           <div>
-            <label style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.1em", textTransform:"uppercase", color:"rgba(255,255,255,0.3)", display:"block", marginBottom:"8px" }}>Email</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
-              onFocus={()=>setFocused("email")} onBlur={()=>setFocused(null)}
-              placeholder="boutique@livrr.fr"
-              style={{ width:"100%", padding:"14px 16px", borderRadius:"8px", border:`1px solid ${focused==="email"?"rgba(201,169,110,0.6)":"rgba(255,255,255,0.08)"}`, background:"rgba(255,255,255,0.04)", color:"#fff", fontSize:"14px", outline:"none", fontFamily:"var(--font-body)", transition:"all 0.2s", boxShadow:focused==="email"?"0 0 0 3px rgba(201,169,110,0.08)":"none" }} />
+            <label style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.1em", textTransform:"uppercase", color:"rgba(255,255,255,0.3)", display:"block", marginBottom:"8px" }}>
+              Identifiant
+            </label>
+            <input
+              type="text"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onFocus={() => setFocused("email")}
+              onBlur={() => setFocused(null)}
+              placeholder="Identifiant boutique"
+              autoComplete="username"
+              style={{
+                width:"100%", padding:"14px 16px", borderRadius:"8px",
+                border:`1px solid ${focused==="email" ? "rgba(201,169,110,0.6)" : "rgba(255,255,255,0.08)"}`,
+                background:"rgba(255,255,255,0.04)", color:"#fff", fontSize:"14px",
+                outline:"none", fontFamily:"var(--font-body)", transition:"all 0.2s",
+                boxShadow: focused==="email" ? "0 0 0 3px rgba(201,169,110,0.08)" : "none",
+                boxSizing:"border-box"
+              }}
+            />
           </div>
 
           {/* Mot de passe */}
           <div>
-            <label style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.1em", textTransform:"uppercase", color:"rgba(255,255,255,0.3)", display:"block", marginBottom:"8px" }}>Mot de passe</label>
+            <label style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.1em", textTransform:"uppercase", color:"rgba(255,255,255,0.3)", display:"block", marginBottom:"8px" }}>
+              Mot de passe
+            </label>
             <div style={{ position:"relative" }}>
-              <input type={showPassword?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)}
-                onFocus={()=>setFocused("password")} onBlur={()=>setFocused(null)}
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onFocus={() => setFocused("password")}
+                onBlur={() => setFocused(null)}
                 placeholder="••••••••"
-                style={{ width:"100%", padding:"14px 44px 14px 16px", borderRadius:"8px", border:`1px solid ${focused==="password"?"rgba(201,169,110,0.6)":"rgba(255,255,255,0.08)"}`, background:"rgba(255,255,255,0.04)", color:"#fff", fontSize:"14px", outline:"none", fontFamily:"var(--font-body)", transition:"all 0.2s", boxShadow:focused==="password"?"0 0 0 3px rgba(201,169,110,0.08)":"none", boxSizing:"border-box" }} />
-              <button type="button" onClick={()=>setShowPassword(!showPassword)}
-                style={{ position:"absolute", right:"14px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:"13px" }}>
-                {showPassword?"Masquer":"Voir"}
+                autoComplete="current-password"
+                style={{
+                  width:"100%", padding:"14px 44px 14px 16px", borderRadius:"8px",
+                  border:`1px solid ${focused==="password" ? "rgba(201,169,110,0.6)" : "rgba(255,255,255,0.08)"}`,
+                  background:"rgba(255,255,255,0.04)", color:"#fff", fontSize:"14px",
+                  outline:"none", fontFamily:"var(--font-body)", transition:"all 0.2s",
+                  boxShadow: focused==="password" ? "0 0 0 3px rgba(201,169,110,0.08)" : "none",
+                  boxSizing:"border-box"
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position:"absolute", right:"14px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:"13px" }}
+              >
+                {showPassword ? "Masquer" : "Voir"}
               </button>
             </div>
           </div>
@@ -140,8 +168,17 @@ export default function Login() {
           </div>
 
           {/* Submit */}
-          <RippleButton type="submit" disabled={loading}
-            style={{ width:"100%", padding:"15px", borderRadius:"8px", background:loading?"rgba(201,169,110,0.5)":"var(--gold)", color:"var(--noir)", fontSize:"13px", fontWeight:"700", letterSpacing:"0.08em", textTransform:"uppercase", cursor:loading?"wait":"pointer", marginTop:"4px" }}>
+          <RippleButton
+            type="submit"
+            disabled={loading}
+            style={{
+              width:"100%", padding:"15px", borderRadius:"8px",
+              background: loading ? "rgba(201,169,110,0.5)" : "var(--gold)",
+              color:"var(--noir)", fontSize:"13px", fontWeight:"700",
+              letterSpacing:"0.08em", textTransform:"uppercase",
+              cursor: loading ? "wait" : "pointer", marginTop:"4px"
+            }}
+          >
             {loading ? "Connexion en cours…" : "Se connecter"}
           </RippleButton>
         </form>
@@ -152,16 +189,14 @@ export default function Login() {
           <a href="/inscription" style={{ fontSize:"13px", color:"var(--gold)", fontWeight:"600", textDecoration:"none" }}>Rejoindre LIVRR →</a>
         </div>
 
-        {/* ── RÉSEAUX SOCIAUX ── */}
+        {/* Réseaux sociaux */}
         <div style={{ marginTop:"36px", textAlign:"center" }}>
-          {/* Séparateur */}
           <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
             <div style={{ flex:1, height:"1px", background:"rgba(255,255,255,0.06)" }} />
             <span style={{ fontSize:"10px", color:"rgba(255,255,255,0.2)", letterSpacing:"0.12em", textTransform:"uppercase", whiteSpace:"nowrap" }}>Suivez-nous</span>
             <div style={{ flex:1, height:"1px", background:"rgba(255,255,255,0.06)" }} />
           </div>
 
-          {/* Icônes avec couleurs officielles */}
           <div style={{ display:"flex", justifyContent:"center", gap:"16px" }}>
             {SOCIAL_LINKS.map(({ label, href, Icon, color, bgHover, borderHover }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" title={label}
@@ -183,12 +218,11 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Footer — remonté avec marginTop plus grand pour espacer */}
+        {/* Footer */}
         <div style={{ marginTop:"40px", textAlign:"center" }}>
           <p style={{ fontSize:"11px", color:"rgba(255,255,255,0.15)", lineHeight:1.6 }}>
             Plateforme réservée aux boutiques partenaires LIVRR.
             <br />
-            {/* ✅ MODIF 1 : moins de 2h au lieu de 1h */}
             Livraison luxe en moins de 2 heures à Paris.
           </p>
         </div>
@@ -196,10 +230,8 @@ export default function Login() {
 
       {/* ── DROITE : visuel luxe ── */}
       <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
-        {/* Fond gradient */}
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg, #0F0F1A 0%, #1A1208 50%, #0A0A0F 100%)" }} />
 
-        {/* Motif géométrique */}
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0.06 }} viewBox="0 0 600 800">
           <defs>
             <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
@@ -211,10 +243,8 @@ export default function Login() {
           <circle cx="300" cy="400" r="300" fill="none" stroke="#C9A96E" strokeWidth="0.5" />
         </svg>
 
-        {/* Halo doré */}
         <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"400px", height:"400px", borderRadius:"50%", background:"radial-gradient(circle, rgba(201,169,110,0.08) 0%, transparent 70%)" }} />
 
-        {/* Contenu central */}
         <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"60px" }}>
           <div style={{ textAlign:"center", maxWidth:"380px" }}>
             <div style={{ width:"40px", height:"1px", background:"rgba(201,169,110,0.4)", margin:"0 auto 32px" }} />
@@ -227,7 +257,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Stats ✅ MODIF 1 : < 2h */}
           <div style={{ position:"absolute", bottom:"52px", display:"flex", gap:"48px" }}>
             {[
               { value:"< 2h",  label:"Délai de livraison" },
@@ -242,7 +271,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Séparateur vertical */}
         <div style={{ position:"absolute", left:0, top:"10%", bottom:"10%", width:"1px", background:"linear-gradient(180deg, transparent, rgba(201,169,110,0.2), transparent)" }} />
       </div>
     </div>
