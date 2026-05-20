@@ -14,8 +14,9 @@ const PAGE_ICONS = {
 };
 
 const formatDuration = (ms) => {
-  if (!ms || ms < 0) return null;
+  if (!ms || ms <= 0) return null;
   const s = Math.round(ms / 1000);
+  if (s < 1) return null;
   if (s < 60) return `${s}s`;
   return `${Math.floor(s / 60)}m${s % 60 > 0 ? ` ${s % 60}s` : ''}`;
 };
@@ -56,21 +57,20 @@ export default function LiveTracking() {
     return () => { off(eventsRef); setIsLive(false); };
   }, [authenticated, boutique]);
 
-  // Calcul durée par page
+  // events trié du plus récent au plus ancien
+  // durée sur une page = timestamp de l'event suivant (index-1, plus récent) - timestamp actuel
   const eventsWithDuration = events.map((event, index) => {
-    const chronological = [...events].reverse();
-    const chronoIndex = chronological.findIndex(e => e.id === event.id);
-    const nextEvent = chronological[chronoIndex + 1];
-    const duration = nextEvent?.timestamp && event.timestamp
-      ? event.timestamp - nextEvent.timestamp
+    const prevEvent = events[index - 1]; // plus récent = quand elle est partie
+    const duration = prevEvent?.timestamp && event.timestamp
+      ? prevEvent.timestamp - event.timestamp
       : null;
     return { ...event, duration };
   });
 
   // Temps total par page
   const timePerPage = {};
-  [...eventsWithDuration].reverse().forEach(e => {
-    if (e.path && e.duration) {
+  eventsWithDuration.forEach(e => {
+    if (e.path && e.duration && e.duration > 0) {
       timePerPage[e.path] = (timePerPage[e.path] || 0) + e.duration;
     }
   });
@@ -80,7 +80,15 @@ export default function LiveTracking() {
     .slice(0, 5);
 
   const uniquePages = [...new Set(events.map(e => e.path))].length;
-  const boutiqueLabel = { thekooples: 'The Kooples', sandro: 'Sandro', isabelmarant: 'Isabel Marant' }[boutique];
+  const boutiqueLabel = {
+    thekooples: 'The Kooples',
+    sandro: 'Sandro',
+    isabelmarant: 'Isabel Marant'
+  }[boutique];
+
+  const totalDuration = events.length > 1
+    ? (events[0]?.timestamp || 0) - (events[events.length - 1]?.timestamp || 0)
+    : 0;
 
   if (!authenticated) {
     return (
@@ -129,11 +137,7 @@ export default function LiveTracking() {
         <span style={styles.sessionInfo}>🏬 <strong style={{color:'#C9A96E'}}>{boutiqueLabel}</strong></span>
         <span style={styles.sessionInfo}>🕐 Session à {sessionStart.toLocaleTimeString('fr-FR')}</span>
         <span style={styles.sessionInfo}>📍 {uniquePages} page{uniquePages > 1 ? 's' : ''} visitée{uniquePages > 1 ? 's' : ''}</span>
-        <span style={styles.sessionInfo}>
-          ⏱️ Durée totale : {formatDuration(events.length > 1
-            ? (events[0]?.timestamp || 0) - (events[events.length - 1]?.timestamp || 0)
-            : 0) || '—'}
-        </span>
+        <span style={styles.sessionInfo}>⏱️ Durée totale : {formatDuration(totalDuration) || '—'}</span>
       </div>
 
       {/* Stats */}
@@ -147,15 +151,11 @@ export default function LiveTracking() {
           <span style={styles.statLabel}>Pages visitées</span>
         </div>
         <div style={styles.statBox}>
-          <span style={styles.statNumber}>
-            {formatDuration(timePerPage['/produits']) || '—'}
-          </span>
+          <span style={styles.statNumber}>{formatDuration(timePerPage['/produits']) || '—'}</span>
           <span style={styles.statLabel}>Temps sur Produits</span>
         </div>
         <div style={styles.statBox}>
-          <span style={styles.statNumber}>
-            {formatDuration(timePerPage['/finance']) || '—'}
-          </span>
+          <span style={styles.statNumber}>{formatDuration(timePerPage['/finance']) || '—'}</span>
           <span style={styles.statLabel}>Temps sur Finance</span>
         </div>
       </div>
@@ -181,23 +181,21 @@ export default function LiveTracking() {
       )}
 
       {/* Parcours */}
-      {events.length > 1 && (
+      {eventsWithDuration.length > 1 && (
         <div style={styles.parcoursBox}>
           <p style={styles.sectionTitle}>📍 Parcours de navigation</p>
           <div style={styles.parcoursFlow}>
-            {[...eventsWithDuration].reverse().map((e, i) => (
+            {[...eventsWithDuration].reverse().map((e, i, arr) => (
               <React.Fragment key={e.id}>
                 <div style={styles.parcoursItem}>
                   <span style={styles.parcoursStep}>
                     {PAGE_ICONS[e.path] || '📌'} {e.label || e.path}
                   </span>
-                  {e.duration && (
+                  {e.duration && formatDuration(e.duration) && (
                     <span style={styles.parcoursDuration}>{formatDuration(e.duration)}</span>
                   )}
                 </div>
-                {i < eventsWithDuration.length - 1 && (
-                  <span style={styles.parcoursArrow}>→</span>
-                )}
+                {i < arr.length - 1 && <span style={styles.parcoursArrow}>→</span>}
               </React.Fragment>
             ))}
           </div>
@@ -207,7 +205,7 @@ export default function LiveTracking() {
       {/* Feed */}
       <div style={styles.feed}>
         <p style={styles.sectionTitle}>Activité en temps réel</p>
-        {events.length === 0 ? (
+        {eventsWithDuration.length === 0 ? (
           <div style={styles.empty}>
             <p style={styles.emptyText}>En attente d'activité sur {boutiqueLabel}...</p>
             <p style={styles.emptyHint}>Les actions apparaîtront ici dès que la directrice navigue.</p>
@@ -224,7 +222,7 @@ export default function LiveTracking() {
                 <span style={styles.eventLabel}>{event.label || event.path}</span>
                 <span style={styles.eventPath}>{event.path}</span>
               </div>
-              {event.duration && (
+              {event.duration && formatDuration(event.duration) && (
                 <span style={styles.durationBadge}>⏱️ {formatDuration(event.duration)}</span>
               )}
               {index === 0 && <span style={styles.newBadge}>NOUVEAU</span>}
