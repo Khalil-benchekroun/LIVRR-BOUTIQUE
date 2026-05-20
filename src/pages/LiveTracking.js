@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseClient';
-import { ref, onValue, off } from 'firebase/database';
+import { ref, onValue, off, remove } from 'firebase/database';
 
 const TRACKING_TOKEN = 'LIVRR2026';
 
-const eventLabels = {
-  page_view: '📄 Page visitée',
-  product_view: '👁️ Produit consulté',
-  add_to_cart: '🛒 Ajout au panier',
-  checkout: '💳 Passage commande',
-  login: '🔐 Connexion',
-  search: '🔍 Recherche',
-  filter: '🎛️ Filtre appliqué',
-  message: '💬 Message envoyé',
+const PAGE_ICONS = {
+  "/": "🏠",
+  "/statistiques": "📊",
+  "/commandes": "📦",
+  "/commandes-pos": "🖥️",
+  "/retours": "↩️",
+  "/produits": "👗",
+  "/categories": "🗂️",
+  "/qrcode": "📱",
+  "/marketing": "🎯",
+  "/vendeurs": "🤝",
+  "/clients": "👥",
+  "/services": "⚙️",
+  "/messages": "💬",
+  "/parametres": "⚙️",
+  "/finance": "💰",
+  "/support": "🎧",
+  "/livraisons": "🚚",
+  "/avis": "⭐",
+  "/calendrier": "📅",
 };
 
 export default function LiveTracking() {
@@ -21,45 +32,54 @@ export default function LiveTracking() {
   const [events, setEvents] = useState([]);
   const [boutique, setBoutique] = useState('thekooples');
   const [isLive, setIsLive] = useState(false);
+  const [sessionStart] = useState(new Date());
 
   const handleAuth = () => {
-    if (token === TRACKING_TOKEN) {
-      setAuthenticated(true);
-    } else {
-      alert('Token invalide');
-    }
+    if (token === TRACKING_TOKEN) setAuthenticated(true);
+    else alert('Token invalide');
+  };
+
+  const handleClear = () => {
+    const eventsRef = ref(db, `tracking/${boutique}/events`);
+    remove(eventsRef);
+    setEvents([]);
   };
 
   useEffect(() => {
     if (!authenticated) return;
-
     const eventsRef = ref(db, `tracking/${boutique}/events`);
     setIsLive(true);
     setEvents([]);
-
     onValue(eventsRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;
+      if (!data) { setEvents([]); return; }
       const parsed = Object.entries(data)
         .map(([id, val]) => ({ id, ...val }))
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-        .slice(0, 50);
+        .slice(0, 100);
       setEvents(parsed);
     });
-
-    return () => {
-      off(eventsRef);
-      setIsLive(false);
-    };
+    return () => { off(eventsRef); setIsLive(false); };
   }, [authenticated, boutique]);
+
+  const boutiqueLabel = {
+    thekooples: 'The Kooples',
+    sandro: 'Sandro',
+    isabelmarant: 'Isabel Marant',
+  }[boutique];
+
+  const uniquePages = [...new Set(events.map(e => e.path))].length;
+  const timeOnSite = events.length > 0
+    ? Math.round((Date.now() - (events[events.length - 1]?.timestamp || Date.now())) / 60000)
+    : 0;
 
   if (!authenticated) {
     return (
       <div style={styles.authContainer}>
         <div style={styles.authBox}>
-          <img src="/logo-livrr.png" alt="LIVRR" style={styles.logo} />
+          <div style={styles.authLogo}>L</div>
           <h2 style={styles.authTitle}>Live Tracking</h2>
-          <p style={styles.authSubtitle}>Accès réservé — LIVRR</p>
+          <p style={styles.authSubtitle}>Accès réservé — LIVRR Internal</p>
           <input
             type="password"
             placeholder="Token d'accès"
@@ -68,9 +88,7 @@ export default function LiveTracking() {
             onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
             style={styles.input}
           />
-          <button onClick={handleAuth} style={styles.button}>
-            Accéder
-          </button>
+          <button onClick={handleAuth} style={styles.button}>Accéder</button>
         </div>
       </div>
     );
@@ -78,64 +96,100 @@ export default function LiveTracking() {
 
   return (
     <div style={styles.container}>
+      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <h1 style={styles.title}>🔴 Live Tracking</h1>
+          <div style={styles.liveDot} />
+          <h1 style={styles.title}>Live Tracking</h1>
           <span style={isLive ? styles.liveBadge : styles.offlineBadge}>
-            {isLive ? '● EN DIRECT' : '○ Hors ligne'}
+            {isLive ? 'EN DIRECT' : 'Hors ligne'}
           </span>
         </div>
-        <select
-          value={boutique}
-          onChange={(e) => setBoutique(e.target.value)}
-          style={styles.select}
-        >
-          <option value="thekooples">The Kooples</option>
-          <option value="sandro">Sandro</option>
-          <option value="isabelmarant">Isabel Marant</option>
-        </select>
+        <div style={styles.headerRight}>
+          <select value={boutique} onChange={(e) => setBoutique(e.target.value)} style={styles.select}>
+            <option value="thekooples">The Kooples</option>
+            <option value="sandro">Sandro</option>
+            <option value="isabelmarant">Isabel Marant</option>
+          </select>
+          <button onClick={handleClear} style={styles.clearBtn}>Effacer</button>
+        </div>
       </div>
 
+      {/* Session info */}
+      <div style={styles.sessionBar}>
+        <span style={styles.sessionInfo}>
+          🏬 <strong style={{color:'#C9A96E'}}>{boutiqueLabel}</strong>
+        </span>
+        <span style={styles.sessionInfo}>
+          🕐 Session démarrée à {sessionStart.toLocaleTimeString('fr-FR')}
+        </span>
+        <span style={styles.sessionInfo}>
+          📍 {uniquePages} page{uniquePages > 1 ? 's' : ''} visitée{uniquePages > 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Stats */}
       <div style={styles.statsRow}>
         <div style={styles.statBox}>
           <span style={styles.statNumber}>{events.length}</span>
-          <span style={styles.statLabel}>Actions captées</span>
+          <span style={styles.statLabel}>Actions totales</span>
+        </div>
+        <div style={styles.statBox}>
+          <span style={styles.statNumber}>{uniquePages}</span>
+          <span style={styles.statLabel}>Pages visitées</span>
         </div>
         <div style={styles.statBox}>
           <span style={styles.statNumber}>
-            {events.filter(e => e.type === 'product_view').length}
+            {events.filter(e => e.path === '/produits').length}
           </span>
-          <span style={styles.statLabel}>Produits vus</span>
+          <span style={styles.statLabel}>Visites Produits</span>
         </div>
         <div style={styles.statBox}>
           <span style={styles.statNumber}>
-            {events.filter(e => e.type === 'add_to_cart').length}
+            {events.filter(e => e.path === '/commandes').length}
           </span>
-          <span style={styles.statLabel}>Ajouts panier</span>
+          <span style={styles.statLabel}>Visites Commandes</span>
         </div>
       </div>
 
+      {/* Parcours visuel */}
+      {events.length > 1 && (
+        <div style={styles.parcoursBox}>
+          <p style={styles.parcoursTitle}>📍 Parcours de navigation</p>
+          <div style={styles.parcoursFlow}>
+            {[...events].reverse().map((e, i) => (
+              <React.Fragment key={e.id}>
+                <span style={styles.parcoursStep}>
+                  {PAGE_ICONS[e.path] || '📌'} {e.label || e.path}
+                </span>
+                {i < events.length - 1 && <span style={styles.parcoursArrow}>→</span>}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feed */}
       <div style={styles.feed}>
+        <p style={styles.feedTitle}>Activité en temps réel</p>
         {events.length === 0 ? (
           <div style={styles.empty}>
-            <p style={styles.emptyText}>En attente d'activité sur la boutique {boutique}...</p>
-            <p style={styles.emptyHint}>Les actions apparaîtront ici en temps réel dès que la directrice se connecte.</p>
+            <p style={styles.emptyText}>En attente d'activité sur {boutiqueLabel}...</p>
+            <p style={styles.emptyHint}>Les actions apparaîtront ici dès que la directrice navigue.</p>
           </div>
         ) : (
-          events.map((event) => (
-            <div key={event.id} style={styles.eventRow}>
-              <span style={styles.eventType}>
-                {eventLabels[event.type] || `📌 ${event.type}`}
-              </span>
-              {event.data?.page && (
-                <span style={styles.eventData}>{event.data.page}</span>
-              )}
-              {event.data?.productName && (
-                <span style={styles.eventData}>{event.data.productName}</span>
-              )}
-              {event.data?.query && (
-                <span style={styles.eventData}>"{event.data.query}"</span>
-              )}
+          events.map((event, index) => (
+            <div key={event.id} style={{
+              ...styles.eventRow,
+              background: index === 0 ? '#C9A96E11' : 'transparent',
+              borderLeft: index === 0 ? '3px solid #C9A96E' : '3px solid transparent',
+            }}>
+              <span style={styles.eventIcon}>{PAGE_ICONS[event.path] || '📌'}</span>
+              <div style={styles.eventInfo}>
+                <span style={styles.eventLabel}>{event.label || event.path}</span>
+                <span style={styles.eventPath}>{event.path}</span>
+              </div>
+              {index === 0 && <span style={styles.newBadge}>NOUVEAU</span>}
               <span style={styles.eventTime}>
                 {event.timestamp
                   ? new Date(event.timestamp).toLocaleTimeString('fr-FR')
@@ -150,129 +204,44 @@ export default function LiveTracking() {
 }
 
 const styles = {
-  authContainer: {
-    minHeight: '100vh',
-    background: '#0A0A0F',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  authBox: {
-    background: '#13131A',
-    border: '1px solid #C9A96E33',
-    borderRadius: 16,
-    padding: '48px 40px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 16,
-    width: 360,
-  },
-  logo: { height: 40, marginBottom: 8 },
-  authTitle: { color: '#C9A96E', fontFamily: 'Cormorant Garamond, serif', fontSize: 28, margin: 0 },
-  authSubtitle: { color: '#666', fontSize: 13, margin: 0 },
-  input: {
-    width: '100%',
-    padding: '12px 16px',
-    background: '#0A0A0F',
-    border: '1px solid #C9A96E44',
-    borderRadius: 8,
-    color: '#fff',
-    fontSize: 14,
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    background: '#C9A96E',
-    color: '#0A0A0F',
-    border: 'none',
-    borderRadius: 8,
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: 'pointer',
-    letterSpacing: 1,
-  },
-  container: {
-    minHeight: '100vh',
-    background: '#0A0A0F',
-    padding: '32px',
-    fontFamily: 'DM Sans, sans-serif',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-  },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: 16 },
-  title: { color: '#C9A96E', fontFamily: 'Cormorant Garamond, serif', fontSize: 32, margin: 0 },
-  liveBadge: {
-    background: '#ff003322',
-    color: '#ff4444',
-    border: '1px solid #ff444444',
-    borderRadius: 20,
-    padding: '4px 12px',
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 1,
-  },
-  offlineBadge: {
-    background: '#33333322',
-    color: '#666',
-    border: '1px solid #33333344',
-    borderRadius: 20,
-    padding: '4px 12px',
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 1,
-  },
-  select: {
-    background: '#13131A',
-    border: '1px solid #C9A96E44',
-    borderRadius: 8,
-    color: '#C9A96E',
-    padding: '8px 16px',
-    fontSize: 14,
-    cursor: 'pointer',
-  },
-  statsRow: {
-    display: 'flex',
-    gap: 16,
-    marginBottom: 24,
-  },
-  statBox: {
-    flex: 1,
-    background: '#13131A',
-    border: '1px solid #C9A96E22',
-    borderRadius: 12,
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statNumber: { color: '#C9A96E', fontSize: 36, fontFamily: 'Cormorant Garamond, serif', fontWeight: 700 },
-  statLabel: { color: '#666', fontSize: 12 },
-  feed: {
-    background: '#13131A',
-    border: '1px solid #C9A96E22',
-    borderRadius: 12,
-    padding: 24,
-    minHeight: 300,
-  },
-  empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 8 },
-  emptyText: { color: '#C9A96E', fontSize: 16, margin: 0 },
-  emptyHint: { color: '#444', fontSize: 13, margin: 0, textAlign: 'center' },
-  eventRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '12px 0',
-    borderBottom: '1px solid #C9A96E11',
-  },
-  eventType: { color: '#fff', fontSize: 14, minWidth: 200 },
-  eventData: { color: '#C9A96E', fontSize: 13, flex: 1 },
-  eventTime: { color: '#444', fontSize: 12, whiteSpace: 'nowrap' },
+  authContainer: { minHeight:'100vh', background:'#0A0A0F', display:'flex', alignItems:'center', justifyContent:'center' },
+  authBox: { background:'#13131A', border:'1px solid #C9A96E33', borderRadius:16, padding:'48px 40px', display:'flex', flexDirection:'column', alignItems:'center', gap:16, width:360 },
+  authLogo: { width:56, height:56, borderRadius:'50%', background:'#C9A96E', display:'flex', alignItems:'center', justifyContent:'center', color:'#0A0A0F', fontSize:24, fontWeight:700, fontFamily:'Cormorant Garamond, serif' },
+  authTitle: { color:'#C9A96E', fontFamily:'Cormorant Garamond, serif', fontSize:28, margin:0 },
+  authSubtitle: { color:'#666', fontSize:13, margin:0 },
+  input: { width:'100%', padding:'12px 16px', background:'#0A0A0F', border:'1px solid #C9A96E44', borderRadius:8, color:'#fff', fontSize:14, outline:'none', boxSizing:'border-box' },
+  button: { width:'100%', padding:'12px', background:'#C9A96E', color:'#0A0A0F', border:'none', borderRadius:8, fontWeight:700, fontSize:14, cursor:'pointer' },
+  container: { minHeight:'100vh', background:'#0A0A0F', padding:'32px', fontFamily:'DM Sans, sans-serif' },
+  header: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 },
+  headerLeft: { display:'flex', alignItems:'center', gap:12 },
+  headerRight: { display:'flex', alignItems:'center', gap:12 },
+  liveDot: { width:12, height:12, borderRadius:'50%', background:'#ff4444', boxShadow:'0 0 8px #ff4444', animation:'pulse 1.5s infinite' },
+  title: { color:'#C9A96E', fontFamily:'Cormorant Garamond, serif', fontSize:32, margin:0 },
+  liveBadge: { background:'#ff003322', color:'#ff4444', border:'1px solid #ff444444', borderRadius:20, padding:'4px 12px', fontSize:11, fontWeight:700, letterSpacing:1 },
+  offlineBadge: { background:'#33333322', color:'#666', border:'1px solid #33333344', borderRadius:20, padding:'4px 12px', fontSize:11, fontWeight:700 },
+  select: { background:'#13131A', border:'1px solid #C9A96E44', borderRadius:8, color:'#C9A96E', padding:'8px 16px', fontSize:14, cursor:'pointer' },
+  clearBtn: { background:'transparent', border:'1px solid #333', borderRadius:8, color:'#666', padding:'8px 16px', fontSize:13, cursor:'pointer' },
+  sessionBar: { display:'flex', gap:24, marginBottom:24, padding:'12px 16px', background:'#13131A', borderRadius:10, border:'1px solid #C9A96E11' },
+  sessionInfo: { color:'#888', fontSize:13 },
+  statsRow: { display:'flex', gap:16, marginBottom:24 },
+  statBox: { flex:1, background:'#13131A', border:'1px solid #C9A96E22', borderRadius:12, padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', gap:4 },
+  statNumber: { color:'#C9A96E', fontSize:36, fontFamily:'Cormorant Garamond, serif', fontWeight:700 },
+  statLabel: { color:'#666', fontSize:12 },
+  parcoursBox: { background:'#13131A', border:'1px solid #C9A96E22', borderRadius:12, padding:'16px 20px', marginBottom:24 },
+  parcoursTitle: { color:'#888', fontSize:12, margin:'0 0 12px 0', textTransform:'uppercase', letterSpacing:1 },
+  parcoursFlow: { display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' },
+  parcoursStep: { background:'#0A0A0F', border:'1px solid #C9A96E33', borderRadius:6, padding:'4px 10px', color:'#C9A96E', fontSize:12 },
+  parcoursArrow: { color:'#333', fontSize:14 },
+  feed: { background:'#13131A', border:'1px solid #C9A96E22', borderRadius:12, padding:24 },
+  feedTitle: { color:'#888', fontSize:12, margin:'0 0 16px 0', textTransform:'uppercase', letterSpacing:1 },
+  empty: { display:'flex', flexDirection:'column', alignItems:'center', padding:'48px 0', gap:8 },
+  emptyText: { color:'#C9A96E', fontSize:16, margin:0 },
+  emptyHint: { color:'#444', fontSize:13, margin:0 },
+  eventRow: { display:'flex', alignItems:'center', gap:12, padding:'12px 8px', borderBottom:'1px solid #C9A96E11', borderRadius:6, marginBottom:2, transition:'background 0.3s' },
+  eventIcon: { fontSize:20, minWidth:28 },
+  eventInfo: { display:'flex', flexDirection:'column', flex:1 },
+  eventLabel: { color:'#fff', fontSize:14, fontWeight:500 },
+  eventPath: { color:'#444', fontSize:11, marginTop:2 },
+  newBadge: { background:'#C9A96E22', color:'#C9A96E', borderRadius:4, padding:'2px 8px', fontSize:10, fontWeight:700, letterSpacing:1 },
+  eventTime: { color:'#444', fontSize:12, whiteSpace:'nowrap' },
 };
