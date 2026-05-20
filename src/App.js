@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { trackEvent } from "./pusherClient";
 import "./index.css";
 
 import Sidebar from "./components/Sidebar";
@@ -34,6 +35,7 @@ import GlobalSearch from "./components/GlobalSearch";
 import Livraisons from "./pages/Livraisons";
 import Avis from "./pages/Avis";
 import Calendrier from "./pages/Calendrier";
+import LiveTracking from "./pages/LiveTracking";
 
 // ── Theme Context ──
 export const ThemeContext = createContext({ dark: false, toggle: () => {} });
@@ -45,10 +47,7 @@ function ThemeProvider({ children }) {
   );
 
   useEffect(() => {
-    document.documentElement.setAttribute(
-      "data-theme",
-      dark ? "dark" : "light"
-    );
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     localStorage.setItem("livrr_theme", dark ? "dark" : "light");
   }, [dark]);
 
@@ -59,17 +58,47 @@ function ThemeProvider({ children }) {
   );
 }
 
+// ── Page Labels ──
+const PAGE_LABELS = {
+  "/": "Vue d'ensemble",
+  "/statistiques": "Statistiques & Rapports",
+  "/commandes": "Commandes",
+  "/commandes-pos": "Commande Manuelle",
+  "/retours": "Retours",
+  "/produits": "Produits",
+  "/categories": "Catégories",
+  "/qrcode": "QR Code",
+  "/marketing": "Marketing & Coupons",
+  "/vendeurs": "Vendeurs",
+  "/clients": "Clients",
+  "/services": "Services",
+  "/messages": "Messages",
+  "/parametres": "Paramètres",
+  "/finance": "Finance",
+  "/support": "Support",
+  "/livraisons": "Livraisons",
+  "/avis": "Avis clients",
+  "/calendrier": "Calendrier"
+};
+
 // ── Transition entre pages ────────────────────────────────────────
 function PageTransition({ children }) {
   const location = useLocation();
+  const { boutique } = useAuth();
   const [displayed, setDisplayed] = React.useState(children);
-  const [phase, setPhase] = React.useState("in"); // "in" | "out"
+  const [phase, setPhase] = React.useState("in");
 
   React.useEffect(() => {
     setPhase("out");
     const t = setTimeout(() => {
       setDisplayed(children);
       setPhase("in");
+
+      // Tracker la navigation
+      if (boutique) {
+        const label = PAGE_LABELS[location.pathname] || location.pathname;
+        trackEvent(boutique.name, location.pathname, label);
+      }
     }, 180);
     return () => clearTimeout(t);
   }, [location.pathname]);
@@ -91,14 +120,7 @@ function PrivateRoute({ children }) {
   const { boutique, loading } = useAuth();
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-        }}
-      >
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh" }}>
         <div className="spinner" />
       </div>
     );
@@ -108,18 +130,10 @@ function PrivateRoute({ children }) {
 
 function AppLayout({ children }) {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F4F2EE" }}>
+    <div style={{ display:"flex", minHeight:"100vh", background:"#F4F2EE" }}>
       <Sidebar />
-      <main
-        style={{
-          flex: 1,
-          marginLeft: "240px",
-          width: "calc(100% - 240px)",
-          minHeight: "100vh",
-          position: "relative",
-        }}
-      >
-        {children}
+      <main style={{ flex:1, marginLeft:"240px", width:"calc(100% - 240px)", minHeight:"100vh", position:"relative" }}>
+        <PageTransition>{children}</PageTransition>
       </main>
     </div>
   );
@@ -127,17 +141,10 @@ function AppLayout({ children }) {
 
 function AppLayoutFixed({ children }) {
   return (
-    <div style={{ height: "100vh", overflow: "hidden", background: "#F4F2EE" }}>
+    <div style={{ height:"100vh", overflow:"hidden", background:"#F4F2EE" }}>
       <Sidebar />
-      <main
-        style={{
-          marginLeft: "260px",
-          height: "100vh",
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        {children}
+      <main style={{ marginLeft:"260px", height:"100vh", overflow:"hidden", position:"relative" }}>
+        <PageTransition>{children}</PageTransition>
       </main>
     </div>
   );
@@ -162,204 +169,27 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/inscription" element={<Onboarding />} />
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/statistiques"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Stats />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/commandes"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Orders />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/commandes-pos"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <POS />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/retours"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Returns />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/produits"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Products />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/categories"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Categories />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/qrcode"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <QRCodePage />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/marketing"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Marketing />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/vendeurs"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Vendors />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/clients"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Clients />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/services"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Services />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/messages"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Messages />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/parametres"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Settings />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/finance"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Finance />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/support"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Support />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/livraisons"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Livraisons />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/avis"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Avis />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/calendrier"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Calendrier />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/tutorial"
-              element={
-                <PrivateRoute>
-                  <Tutorial />
-                </PrivateRoute>
-              }
-            />
+            <Route path="/" element={<PrivateRoute><AppLayout><Dashboard /></AppLayout></PrivateRoute>} />
+            <Route path="/statistiques" element={<PrivateRoute><AppLayout><Stats /></AppLayout></PrivateRoute>} />
+            <Route path="/commandes" element={<PrivateRoute><AppLayout><Orders /></AppLayout></PrivateRoute>} />
+            <Route path="/commandes-pos" element={<PrivateRoute><AppLayout><POS /></AppLayout></PrivateRoute>} />
+            <Route path="/retours" element={<PrivateRoute><AppLayout><Returns /></AppLayout></PrivateRoute>} />
+            <Route path="/produits" element={<PrivateRoute><AppLayout><Products /></AppLayout></PrivateRoute>} />
+            <Route path="/categories" element={<PrivateRoute><AppLayout><Categories /></AppLayout></PrivateRoute>} />
+            <Route path="/qrcode" element={<PrivateRoute><AppLayout><QRCodePage /></AppLayout></PrivateRoute>} />
+            <Route path="/marketing" element={<PrivateRoute><AppLayout><Marketing /></AppLayout></PrivateRoute>} />
+            <Route path="/vendeurs" element={<PrivateRoute><AppLayout><Vendors /></AppLayout></PrivateRoute>} />
+            <Route path="/clients" element={<PrivateRoute><AppLayout><Clients /></AppLayout></PrivateRoute>} />
+            <Route path="/services" element={<PrivateRoute><AppLayout><Services /></AppLayout></PrivateRoute>} />
+            <Route path="/messages" element={<PrivateRoute><AppLayout><Messages /></AppLayout></PrivateRoute>} />
+            <Route path="/parametres" element={<PrivateRoute><AppLayout><Settings /></AppLayout></PrivateRoute>} />
+            <Route path="/finance" element={<PrivateRoute><AppLayout><Finance /></AppLayout></PrivateRoute>} />
+            <Route path="/support" element={<PrivateRoute><AppLayout><Support /></AppLayout></PrivateRoute>} />
+            <Route path="/livraisons" element={<PrivateRoute><AppLayout><Livraisons /></AppLayout></PrivateRoute>} />
+            <Route path="/avis" element={<PrivateRoute><AppLayout><Avis /></AppLayout></PrivateRoute>} />
+            <Route path="/calendrier" element={<PrivateRoute><AppLayout><Calendrier /></AppLayout></PrivateRoute>} />
+            <Route path="/tutorial" element={<PrivateRoute><Tutorial /></PrivateRoute>} />
+            <Route path="/live-tracking" element={<LiveTracking />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
